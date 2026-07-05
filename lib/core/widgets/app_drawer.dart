@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../router/app_router.dart';
 import '../theme/app_colors.dart';
+import 'app_confirm_dialog.dart';
 
 class AppDrawer extends StatelessWidget {
   final String currentRoute;
@@ -12,23 +13,69 @@ class AppDrawer extends StatelessWidget {
     required this.currentRoute,
   });
 
+  Future<void> _showLogoutDialog(BuildContext context) async {
+    final router = GoRouter.of(context);
+    final navigator = Navigator.of(context);
+
+    final result = await showAppConfirmDialog(
+      context: context,
+      title: '로그아웃하시겠습니까?',
+      message: '현재 계정에서 로그아웃됩니다.',
+      confirmText: '로그아웃',
+    );
+
+    if (result) {
+      if (navigator.canPop()) {
+        navigator.pop();
+      }
+
+      router.go(AppRoutes.login);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Drawer(
       backgroundColor: Colors.white,
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 22, 18, 18),
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'AI Travel Planner',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w900,
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'AI Travel Planner',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                  Material(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(14),
+                    child: InkWell(
+                      onTap: () => Navigator.of(context).pop(),
+                      borderRadius: BorderRadius.circular(14),
+                      child: Container(
+                        width: 42,
+                        height: 42,
+                        alignment: Alignment.center,
+                        child: const Icon(
+                          Icons.close_rounded,
+                          color: AppColors.textPrimary,
+                          size: 24,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
+
               const SizedBox(height: 6),
+
               Text(
                 '스마트 일본 여행 도우미',
                 style: Theme.of(context).textTheme.bodyMedium,
@@ -76,6 +123,12 @@ class AppDrawer extends StatelessWidget {
 
               const Spacer(),
 
+              _LogoutButton(
+                onTap: () => _showLogoutDialog(context),
+              ),
+
+              const SizedBox(height: 14),
+
               Text(
                 'Version 1.0',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -108,7 +161,8 @@ class _DrawerItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final selected = route == currentRoute;
-    final itemColor = color ?? (selected ? AppColors.primary : AppColors.textPrimary);
+    final itemColor =
+        color ?? (selected ? AppColors.primary : AppColors.textPrimary);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -155,6 +209,56 @@ class _DrawerItem extends StatelessWidget {
                   ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LogoutButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _LogoutButton({
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.border,
+              width: 1,
+            ),
+          ),
+          child: const Row(
+            children: [
+              Icon(
+                Icons.logout_rounded,
+                color: AppColors.textSecondary,
+                size: 23,
+              ),
+              SizedBox(width: 12),
+              Text(
+                '로그아웃',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
           ),
         ),
       ),

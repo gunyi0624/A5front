@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_confirm_dialog.dart';
 
 class ItineraryResultPage extends StatefulWidget {
   const ItineraryResultPage({super.key});
@@ -52,38 +53,24 @@ class _ItineraryResultPageState extends State<ItineraryResultPage> {
       return false;
     }
 
-    final result = await showDialog<_LeaveResult>(
+    final result = await showAppLeaveDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('일정을 저장하시겠습니까?'),
-          content: const Text('저장하지 않으면 생성된 일정이 사라집니다.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, _LeaveResult.cancel),
-              child: const Text('취소'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, _LeaveResult.discard),
-              child: const Text('저장하지 않기'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, _LeaveResult.save),
-              child: const Text('저장'),
-            ),
-          ],
-        );
-      },
+      title: '일정을 저장하시겠습니까?',
+      message: '저장하지 않으면 생성된 일정이 사라집니다.',
+      saveText: '저장',
+      discardText: '저장하지 않기',
+      cancelText: '취소',
     );
 
     if (!mounted) return false;
 
-    if (result == _LeaveResult.save) {
+    if (result == AppLeaveDialogResult.save) {
       setState(() {
         isSaved = true;
       });
+
       context.go('/schedule');
-    } else if (result == _LeaveResult.discard) {
+    } else if (result == AppLeaveDialogResult.discard) {
       context.go('/home');
     }
 
@@ -105,30 +92,15 @@ class _ItineraryResultPageState extends State<ItineraryResultPage> {
   }
 
   Future<void> _deleteItem(_ItineraryItem item) async {
-    final result = await showDialog<bool>(
+    final result = await showAppConfirmDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('일정을 삭제하시겠습니까?'),
-          content: Text('${item.time} ${item.title} 일정이 삭제됩니다.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('취소'),
-            ),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.error,
-              ),
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('삭제'),
-            ),
-          ],
-        );
-      },
+      title: '일정을 삭제하시겠습니까?',
+      message: '${item.time} ${item.title} 일정이 삭제됩니다.',
+      confirmText: '삭제',
+      type: AppConfirmDialogType.danger,
     );
 
-    if (result != true) return;
+    if (!result) return;
 
     setState(() {
       items.remove(item);
@@ -702,12 +674,6 @@ class _BottomSheetAction extends StatelessWidget {
       ),
     );
   }
-}
-
-enum _LeaveResult {
-  cancel,
-  discard,
-  save,
 }
 
 class _ItineraryItem {

@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/widgets/app_drawer.dart';
 import '../../../core/widgets/app_page_header.dart';
+import '../../../core/widgets/app_confirm_dialog.dart';
 
 class SchedulePage extends StatefulWidget {
   const SchedulePage({super.key});
@@ -67,30 +68,15 @@ class _SchedulePageState extends State<SchedulePage> {
   }
 
   Future<void> _showDeleteDialog(_ScheduleItem item) async {
-    final result = await showDialog<bool>(
+    final result = await showAppConfirmDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('일정을 삭제하시겠습니까?'),
-          content: Text('${item.title} 일정이 삭제됩니다.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('취소'),
-            ),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.error,
-              ),
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('삭제'),
-            ),
-          ],
-        );
-      },
+      title: '일정을 삭제하시겠습니까?',
+      message: '${item.title} 일정이 삭제됩니다.',
+      confirmText: '삭제',
+      type: AppConfirmDialogType.danger,
     );
 
-    if (result == true) {
+    if (result) {
       setState(() {
         schedules.remove(item);
       });

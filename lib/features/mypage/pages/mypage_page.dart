@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/widgets/app_drawer.dart';
 import '../../../core/widgets/app_page_header.dart';
+import '../../../core/widgets/app_confirm_dialog.dart';
 
 class MyPage extends StatefulWidget {
   const MyPage({super.key});
@@ -58,58 +59,28 @@ class _MyPageState extends State<MyPage> {
   }
 
   Future<void> _showLogoutDialog() async {
-    final result = await showDialog<bool>(
+    final result = await showAppConfirmDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('로그아웃하시겠습니까?'),
-          content: const Text('현재 계정에서 로그아웃됩니다.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('취소'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('로그아웃'),
-            ),
-          ],
-        );
-      },
+      title: '로그아웃하시겠습니까?',
+      message: '현재 계정에서 로그아웃됩니다.',
+      confirmText: '로그아웃',
     );
 
-    if (result == true && mounted) {
+    if (result && mounted) {
       context.go('/login');
     }
   }
 
   Future<void> _showWithdrawDialog() async {
-    final result = await showDialog<bool>(
+    final result = await showAppConfirmDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('회원탈퇴하시겠습니까?'),
-          content: const Text(
-            '회원 정보와 저장된 여행 일정이 모두 삭제되며 복구할 수 없습니다.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('취소'),
-            ),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.error,
-              ),
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('회원탈퇴'),
-            ),
-          ],
-        );
-      },
+      title: '회원탈퇴하시겠습니까?',
+      message: '회원 정보와 저장된 여행 일정이 모두 삭제되며 복구할 수 없습니다.',
+      confirmText: '회원탈퇴',
+      type: AppConfirmDialogType.danger,
     );
 
-    if (result == true && mounted) {
+    if (result && mounted) {
       context.go('/login');
     }
   }
