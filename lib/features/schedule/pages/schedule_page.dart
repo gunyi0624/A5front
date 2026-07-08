@@ -247,7 +247,7 @@ class _SchedulePageState extends State<SchedulePage> {
                     ...items.map(
                           (item) => _ScheduleCard(
                         item: item,
-                        onTap: () => context.go('/result'),
+                        onTap: () => context.go(AppRoutes.result),
                         onMoreTap: () => _showCardMenu(item),
                       ),
                     ),
@@ -316,7 +316,8 @@ class _ScheduleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = item.isCompleted ? AppColors.textSecondary : AppColors.primary;
+    final statusColor =
+    item.isCompleted ? AppColors.textSecondary : AppColors.primary;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -367,7 +368,8 @@ class _ScheduleCard extends StatelessWidget {
                         children: [
                           Text(
                             item.title,
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            style:
+                            Theme.of(context).textTheme.bodyLarge?.copyWith(
                               fontWeight: FontWeight.w900,
                             ),
                           ),

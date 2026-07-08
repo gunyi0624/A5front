@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../widgets/trip_step_indicator.dart';
 import '../widgets/trip_step_header.dart';
 import '../widgets/trip_bottom_navigation.dart';
+import '../../../core/router/app_router.dart';
 
 class TripPeriodPage extends StatefulWidget {
   const TripPeriodPage({super.key});
@@ -81,7 +82,7 @@ class _TripPeriodPageState extends State<TripPeriodPage> {
       return;
     }
 
-    context.go('/trip/region');
+    context.go(AppRoutes.tripEntryExit);
   }
 
   @override

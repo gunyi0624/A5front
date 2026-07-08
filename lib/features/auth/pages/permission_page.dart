@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 
 class PermissionPage extends StatefulWidget {
@@ -29,7 +30,7 @@ class _PermissionPageState extends State<PermissionPage> {
               Align(
                 alignment: Alignment.centerLeft,
                 child: IconButton(
-                  onPressed: () => context.go('/login'),
+                  onPressed: () => context.go(AppRoutes.login),
                   icon: const Icon(Icons.arrow_back_ios_new_rounded),
                   color: AppColors.textPrimary,
                 ),
@@ -86,7 +87,7 @@ class _PermissionPageState extends State<PermissionPage> {
               const Spacer(),
 
               FilledButton(
-                onPressed: () => context.go('/home'),
+                onPressed: () => context.go(AppRoutes.home),
                 child: const Text('계속하기'),
               ),
 
@@ -96,7 +97,7 @@ class _PermissionPageState extends State<PermissionPage> {
                 width: double.infinity,
                 height: 54,
                 child: TextButton(
-                  onPressed: () => context.go('/home'),
+                  onPressed: () => context.go(AppRoutes.home),
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.textSecondary,
                     shape: RoundedRectangleBorder(

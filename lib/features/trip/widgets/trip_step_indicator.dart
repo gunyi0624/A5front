@@ -9,7 +9,7 @@ class TripStepIndicator extends StatelessWidget {
   const TripStepIndicator({
     super.key,
     required this.currentStep,
-    this.totalStep = 6,
+    this.totalStep = 7,
   });
 
   @override

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 
 class LoginPage extends StatelessWidget {
@@ -77,7 +78,8 @@ class LoginPage extends StatelessWidget {
                       children: [
                         Text(
                           'AI 여행 플래너에\n오신 것을 환영합니다.',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          style:
+                          Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w900,
                             height: 1.35,
                           ),
@@ -87,7 +89,8 @@ class LoginPage extends StatelessWidget {
 
                         Text(
                           '간편하게 로그인하고 나만의 일본 여행 일정을 만들어보세요.',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          style:
+                          Theme.of(context).textTheme.bodyMedium?.copyWith(
                             height: 1.5,
                           ),
                         ),
@@ -100,7 +103,7 @@ class LoginPage extends StatelessWidget {
                           backgroundColor: Colors.white,
                           textColor: Colors.black,
                           borderColor: AppColors.border,
-                          onTap: () => context.go('/permission'),
+                          onTap: () => context.go(AppRoutes.permission),
                         ),
 
                         const SizedBox(height: 14),
@@ -110,7 +113,7 @@ class LoginPage extends StatelessWidget {
                           iconText: 'N',
                           backgroundColor: const Color(0xFF03C75A),
                           textColor: Colors.white,
-                          onTap: () => context.go('/permission'),
+                          onTap: () => context.go(AppRoutes.permission),
                         ),
 
                         const SizedBox(height: 14),
@@ -120,7 +123,7 @@ class LoginPage extends StatelessWidget {
                           iconText: '●',
                           backgroundColor: const Color(0xFFFFE500),
                           textColor: Colors.black,
-                          onTap: () => context.go('/permission'),
+                          onTap: () => context.go(AppRoutes.permission),
                         ),
                       ],
                     ),

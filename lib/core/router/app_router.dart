@@ -17,6 +17,7 @@ import '../../features/trip/pages/trip_period_page.dart';
 import '../../features/trip/pages/trip_region_page.dart';
 import '../../features/trip/pages/trip_theme_page.dart';
 import '../../features/trip/pages/trip_transport_page.dart';
+import '../../features/trip/pages/trip_entry_exit_page.dart';
 
 final appRouter = GoRouter(
   initialLocation: AppRoutes.splash,
@@ -76,6 +77,12 @@ final appRouter = GoRouter(
     ),
 
     GoRoute(
+      path: AppRoutes.tripEntryExit,
+      name: AppRouteNames.tripEntryExit,
+      builder: (context, state) => const TripEntryExitPage(),
+    ),
+
+    GoRoute(
       path: AppRoutes.tripRegion,
       name: AppRouteNames.tripRegion,
       builder: (context, state) => const TripRegionPage(),
@@ -132,6 +139,7 @@ class AppRoutes {
   static const emergency = '/emergency';
 
   static const tripPeriod = '/trip/period';
+  static const tripEntryExit = '/trip/entry-exit';
   static const tripRegion = '/trip/region';
   static const tripCompanion = '/trip/companion';
   static const tripTheme = '/trip/theme';
@@ -155,6 +163,7 @@ class AppRouteNames {
   static const emergency = 'emergency';
 
   static const tripPeriod = 'tripPeriod';
+  static const tripEntryExit = 'tripEntryExit';
   static const tripRegion = 'tripRegion';
   static const tripCompanion = 'tripCompanion';
   static const tripTheme = 'tripTheme';

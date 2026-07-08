@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../widgets/trip_step_indicator.dart';
 import '../widgets/trip_step_header.dart';
@@ -39,7 +40,7 @@ class _TripTransportPageState extends State<TripTransportPage> {
       return;
     }
 
-    context.go('/trip/fixed-schedule');
+    context.go(AppRoutes.loading);
   }
 
   @override
@@ -49,7 +50,7 @@ class _TripTransportPageState extends State<TripTransportPage> {
       body: SafeArea(
         child: Column(
           children: [
-            const TripStepHeader(currentStep: 5),
+            const TripStepHeader(currentStep: 7),
 
             Expanded(
               child: SingleChildScrollView(
@@ -57,13 +58,14 @@ class _TripTransportPageState extends State<TripTransportPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const TripStepIndicator(currentStep: 5),
+                    const TripStepIndicator(currentStep: 7),
 
                     const SizedBox(height: 34),
 
                     Text(
                       '어떻게 이동할\n예정인가요?',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      style:
+                      Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.w900,
                         height: 1.25,
                       ),
@@ -118,7 +120,10 @@ class _TripTransportPageState extends State<TripTransportPage> {
                           Expanded(
                             child: Text(
                               '차량 렌트를 선택한 경우 국제운전면허증 준비 여부를 반드시 확인하세요.',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.w700,
                                 height: 1.4,
@@ -134,8 +139,9 @@ class _TripTransportPageState extends State<TripTransportPage> {
             ),
 
             TripBottomNavigation(
-              onPrevious: () => context.go('/trip/theme'),
+              onPrevious: () => context.go(AppRoutes.tripTheme),
               onNext: _goNext,
+              nextText: 'AI 일정 생성하기',
             ),
           ],
         ),

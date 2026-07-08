@@ -67,7 +67,7 @@ class _MyPageState extends State<MyPage> {
     );
 
     if (result && mounted) {
-      context.go('/login');
+      context.go(AppRoutes.login);
     }
   }
 
@@ -81,7 +81,7 @@ class _MyPageState extends State<MyPage> {
     );
 
     if (result && mounted) {
-      context.go('/login');
+      context.go(AppRoutes.login);
     }
   }
 
@@ -146,8 +146,8 @@ class _MyPageState extends State<MyPage> {
                           children: [
                             _RadioTile(
                               label: '오전만',
-                              selected:
-                              notificationFrequency == NotificationFrequency.morning,
+                              selected: notificationFrequency ==
+                                  NotificationFrequency.morning,
                               onTap: () {
                                 setState(() {
                                   notificationFrequency =
@@ -157,8 +157,8 @@ class _MyPageState extends State<MyPage> {
                             ),
                             _RadioTile(
                               label: '오후만',
-                              selected:
-                              notificationFrequency == NotificationFrequency.afternoon,
+                              selected: notificationFrequency ==
+                                  NotificationFrequency.afternoon,
                               onTap: () {
                                 setState(() {
                                   notificationFrequency =
@@ -168,11 +168,12 @@ class _MyPageState extends State<MyPage> {
                             ),
                             _RadioTile(
                               label: '오전 + 오후',
-                              selected:
-                              notificationFrequency == NotificationFrequency.both,
+                              selected: notificationFrequency ==
+                                  NotificationFrequency.both,
                               onTap: () {
                                 setState(() {
-                                  notificationFrequency = NotificationFrequency.both;
+                                  notificationFrequency =
+                                      NotificationFrequency.both;
                                 });
                               },
                             ),
@@ -194,7 +195,8 @@ class _MyPageState extends State<MyPage> {
                           children: [
                             if (notificationFrequency ==
                                 NotificationFrequency.morning ||
-                                notificationFrequency == NotificationFrequency.both)
+                                notificationFrequency ==
+                                    NotificationFrequency.both)
                               _TimeTile(
                                 label: '오전 시간',
                                 time: _formatTime(morningTime),
@@ -202,7 +204,8 @@ class _MyPageState extends State<MyPage> {
                               ),
                             if (notificationFrequency ==
                                 NotificationFrequency.afternoon ||
-                                notificationFrequency == NotificationFrequency.both)
+                                notificationFrequency ==
+                                    NotificationFrequency.both)
                               Padding(
                                 padding: EdgeInsets.only(
                                   top: notificationFrequency ==

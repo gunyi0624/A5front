@@ -13,7 +13,7 @@ class TripStepHeader extends StatelessWidget {
   const TripStepHeader({
     super.key,
     required this.currentStep,
-    this.totalStep = 6,
+    this.totalStep = 7,
     this.title = '일정 생성',
     this.backRoute = AppRoutes.home,
   });

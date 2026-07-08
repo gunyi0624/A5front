@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../widgets/trip_step_indicator.dart';
 import '../widgets/trip_step_header.dart';
@@ -69,7 +70,7 @@ class _TripCompanionPageState extends State<TripCompanionPage> {
       return;
     }
 
-    context.go('/trip/theme');
+    context.go(AppRoutes.tripTheme);
   }
 
   @override
@@ -79,7 +80,7 @@ class _TripCompanionPageState extends State<TripCompanionPage> {
       body: SafeArea(
         child: Column(
           children: [
-            const TripStepHeader(currentStep: 3),
+            const TripStepHeader(currentStep: 5),
 
             Expanded(
               child: SingleChildScrollView(
@@ -87,13 +88,14 @@ class _TripCompanionPageState extends State<TripCompanionPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const TripStepIndicator(currentStep: 3),
+                    const TripStepIndicator(currentStep: 5),
 
                     const SizedBox(height: 34),
 
                     Text(
                       '누구와 함께\n여행하시나요?',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      style:
+                      Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.w900,
                         height: 1.25,
                       ),
@@ -132,7 +134,7 @@ class _TripCompanionPageState extends State<TripCompanionPage> {
             ),
 
             TripBottomNavigation(
-              onPrevious: () => context.go('/trip/region'),
+              onPrevious: () => context.go(AppRoutes.tripRegion),
               onNext: _goNext,
             ),
           ],

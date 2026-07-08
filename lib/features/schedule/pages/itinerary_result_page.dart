@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_confirm_dialog.dart';
 
@@ -49,7 +50,7 @@ class _ItineraryResultPageState extends State<ItineraryResultPage> {
 
   Future<bool> _handleBack() async {
     if (isSaved) {
-      context.go('/schedule');
+      context.go(AppRoutes.schedule);
       return false;
     }
 
@@ -69,9 +70,9 @@ class _ItineraryResultPageState extends State<ItineraryResultPage> {
         isSaved = true;
       });
 
-      context.go('/schedule');
+      context.go(AppRoutes.schedule);
     } else if (result == AppLeaveDialogResult.discard) {
-      context.go('/home');
+      context.go(AppRoutes.home);
     }
 
     return false;
@@ -88,7 +89,7 @@ class _ItineraryResultPageState extends State<ItineraryResultPage> {
       ),
     );
 
-    context.go('/schedule');
+    context.go(AppRoutes.schedule);
   }
 
   Future<void> _deleteItem(_ItineraryItem item) async {
@@ -307,7 +308,9 @@ class _ItineraryResultPageState extends State<ItineraryResultPage> {
                       child: Text(
                         isSaved ? '저장됨' : '저장 전',
                         style: TextStyle(
-                          color: isSaved ? AppColors.success : const Color(0xFF9A6B00),
+                          color: isSaved
+                              ? AppColors.success
+                              : const Color(0xFF9A6B00),
                           fontSize: 12,
                           fontWeight: FontWeight.w900,
                         ),
@@ -323,7 +326,7 @@ class _ItineraryResultPageState extends State<ItineraryResultPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _TripSummaryCard(),
+                      const _TripSummaryCard(),
 
                       const SizedBox(height: 22),
 
@@ -393,6 +396,8 @@ class _ItineraryResultPageState extends State<ItineraryResultPage> {
 }
 
 class _TripSummaryCard extends StatelessWidget {
+  const _TripSummaryCard();
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -409,9 +414,9 @@ class _TripSummaryCard extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(24),
       ),
-      child: Column(
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
+        children: [
           Text(
             '도쿄 여행',
             style: TextStyle(
@@ -490,9 +495,7 @@ class _TimelineItem extends StatelessWidget {
             decoration: BoxDecoration(
               color: item.isEmpty ? AppColors.background : Colors.white,
               borderRadius: BorderRadius.circular(20),
-              border: item.isEmpty
-                  ? Border.all(color: AppColors.border)
-                  : null,
+              border: item.isEmpty ? Border.all(color: AppColors.border) : null,
               boxShadow: item.isEmpty
                   ? null
                   : [

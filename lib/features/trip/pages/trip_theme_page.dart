@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../widgets/trip_step_indicator.dart';
 import '../widgets/trip_step_header.dart';
@@ -79,7 +80,7 @@ class _TripThemePageState extends State<TripThemePage> {
       return;
     }
 
-    context.go('/trip/transport');
+    context.go(AppRoutes.tripTransport);
   }
 
   void _toggleTheme(String theme) {
@@ -99,7 +100,7 @@ class _TripThemePageState extends State<TripThemePage> {
       body: SafeArea(
         child: Column(
           children: [
-            const TripStepHeader(currentStep: 4),
+            const TripStepHeader(currentStep: 6),
 
             Expanded(
               child: SingleChildScrollView(
@@ -107,13 +108,14 @@ class _TripThemePageState extends State<TripThemePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const TripStepIndicator(currentStep: 4),
+                    const TripStepIndicator(currentStep: 6),
 
                     const SizedBox(height: 34),
 
                     Text(
                       '어떤 여행을\n원하시나요?',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      style:
+                      Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.w900,
                         height: 1.25,
                       ),
@@ -155,7 +157,8 @@ class _TripThemePageState extends State<TripThemePage> {
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: themes.length,
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
                         mainAxisSpacing: 14,
                         crossAxisSpacing: 14,
@@ -178,7 +181,7 @@ class _TripThemePageState extends State<TripThemePage> {
             ),
 
             TripBottomNavigation(
-              onPrevious: () => context.go('/trip/companion'),
+              onPrevious: () => context.go(AppRoutes.tripCompanion),
               onNext: _goNext,
             ),
           ],
@@ -254,7 +257,9 @@ class _ThemeCard extends StatelessWidget {
                     theme.name,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w900,
-                      color: selected ? AppColors.primary : AppColors.textPrimary,
+                      color: selected
+                          ? AppColors.primary
+                          : AppColors.textPrimary,
                     ),
                   ),
 

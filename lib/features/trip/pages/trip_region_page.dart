@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../widgets/trip_step_indicator.dart';
 import '../widgets/trip_step_header.dart';
 import '../widgets/trip_bottom_navigation.dart';
+import '../../../core/router/app_router.dart';
 
 class TripRegionPage extends StatefulWidget {
   const TripRegionPage({super.key});
@@ -14,62 +15,149 @@ class TripRegionPage extends StatefulWidget {
 }
 
 class _TripRegionPageState extends State<TripRegionPage> {
-  String? selectedRegion;
+  final Set<String> selectedRegions = {};
 
-  final List<_RegionItem> regions = const [
-    _RegionItem(
-      name: '도쿄',
-      description: '쇼핑, 맛집, 도시 관광',
-      icon: Icons.location_city_rounded,
+  final List<_RegionGroup> regionGroups = const [
+    _RegionGroup(
+      name: '홋카이도',
+      description: '삿포로, 오타루, 하코다테 등 북해도 여행 지역',
+      prefectures: [
+        '홋카이도',
+      ],
     ),
-    _RegionItem(
-      name: '오사카',
-      description: '먹거리, 유니버설, 활기찬 거리',
-      icon: Icons.ramen_dining_rounded,
+    _RegionGroup(
+      name: '도호쿠',
+      description: '아오모리, 센다이 등 일본 북동부 지역',
+      prefectures: [
+        '미야기',
+        '아오모리',
+        '이와테',
+        '아키타',
+        '야마가타',
+        '후쿠시마',
+      ],
     ),
-    _RegionItem(
-      name: '교토',
-      description: '전통, 사찰, 감성 여행',
-      icon: Icons.temple_buddhist_rounded,
+    _RegionGroup(
+      name: '간토',
+      description: '도쿄, 요코하마 등 수도권 중심 지역',
+      prefectures: [
+        '도쿄',
+        '가나가와',
+        '지바',
+        '사이타마',
+        '이바라키',
+        '도치기',
+        '군마',
+      ],
     ),
-    _RegionItem(
-      name: '후쿠오카',
-      description: '가까운 거리, 맛집, 온천',
-      icon: Icons.spa_rounded,
+    _RegionGroup(
+      name: '주부',
+      description: '나고야, 시즈오카, 나가노 등 일본 중부 지역',
+      prefectures: [
+        '아이치',
+        '시즈오카',
+        '나가노',
+        '야마나시',
+        '기후',
+        '니가타',
+        '도야마',
+        '이시카와',
+        '후쿠이',
+      ],
     ),
-    _RegionItem(
-      name: '삿포로',
-      description: '눈, 자연, 겨울 여행',
-      icon: Icons.ac_unit_rounded,
+    _RegionGroup(
+      name: '간사이',
+      description: '오사카, 교토, 고베, 나라 중심의 인기 여행 지역',
+      prefectures: [
+        '오사카',
+        '교토',
+        '효고',
+        '나라',
+        '시가',
+        '와카야마',
+        '미에',
+      ],
     ),
-    _RegionItem(
-      name: '오키나와',
-      description: '바다, 휴양, 액티비티',
-      icon: Icons.beach_access_rounded,
+    _RegionGroup(
+      name: '주고쿠',
+      description: '히로시마, 오카야마, 돗토리 등 서일본 지역',
+      prefectures: [
+        '히로시마',
+        '오카야마',
+        '야마구치',
+        '돗토리',
+        '시마네',
+      ],
+    ),
+    _RegionGroup(
+      name: '시코쿠',
+      description: '가가와, 에히메 등 조용한 로컬 여행 지역',
+      prefectures: [
+        '가가와',
+        '에히메',
+        '도쿠시마',
+        '고치',
+      ],
+    ),
+    _RegionGroup(
+      name: '규슈·오키나와',
+      description: '후쿠오카, 나가사키, 오키나와 등 남부 여행 지역',
+      prefectures: [
+        '후쿠오카',
+        '오키나와',
+        '구마모토',
+        '나가사키',
+        '오이타',
+        '가고시마',
+        '미야자키',
+        '사가',
+      ],
     ),
   ];
 
+  void _toggleRegion(String region) {
+    setState(() {
+      if (selectedRegions.contains(region)) {
+        selectedRegions.remove(region);
+      } else {
+        selectedRegions.add(region);
+      }
+    });
+  }
+
+  void _removeRegion(String region) {
+    setState(() {
+      selectedRegions.remove(region);
+    });
+  }
+
+  void _goPrevious() {
+    context.go(AppRoutes.tripFixedSchedule);
+  }
+
   void _goNext() {
-    if (selectedRegion == null) {
+    if (selectedRegions.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('여행 지역을 선택해주세요.'),
+          content: Text('여행할 지역을 하나 이상 선택해주세요.'),
         ),
       );
       return;
     }
 
-    context.go('/trip/companion');
+    context.go(AppRoutes.tripCompanion);
   }
 
   @override
   Widget build(BuildContext context) {
+    final selectedList = selectedRegions.toList();
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
-            const TripStepHeader(currentStep: 2),
+            const TripStepHeader(currentStep: 4),
 
             Expanded(
               child: SingleChildScrollView(
@@ -77,13 +165,14 @@ class _TripRegionPageState extends State<TripRegionPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const TripStepIndicator(currentStep: 2),
+                    const TripStepIndicator(currentStep: 4),
 
                     const SizedBox(height: 34),
 
                     Text(
                       '어느 지역으로\n떠나시나요?',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      style:
+                      Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.w900,
                         height: 1.25,
                       ),
@@ -92,39 +181,31 @@ class _TripRegionPageState extends State<TripRegionPage> {
                     const SizedBox(height: 12),
 
                     Text(
-                      '여행할 일본 도시를 선택하면 해당 지역에 맞는 장소와 동선을 추천합니다.',
+                      '여행할 도도부현을 여러 개 선택하면 선택한 지역에 맞는 장소와 동선을 추천합니다.',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: AppColors.textSecondary,
                         height: 1.45,
                       ),
                     ),
 
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 24),
 
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: regions.length,
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 14,
-                        crossAxisSpacing: 14,
-                        childAspectRatio: 0.92,
+                    _SelectedRegionBox(
+                      selectedRegions: selectedList,
+                      onRemove: _removeRegion,
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    ...regionGroups.map(
+                          (group) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _RegionExpansionCard(
+                          group: group,
+                          selectedRegions: selectedRegions,
+                          onToggleRegion: _toggleRegion,
+                        ),
                       ),
-                      itemBuilder: (context, index) {
-                        final region = regions[index];
-                        final selected = selectedRegion == region.name;
-
-                        return _RegionCard(
-                          region: region,
-                          selected: selected,
-                          onTap: () {
-                            setState(() {
-                              selectedRegion = region.name;
-                            });
-                          },
-                        );
-                      },
                     ),
                   ],
                 ),
@@ -132,7 +213,7 @@ class _TripRegionPageState extends State<TripRegionPage> {
             ),
 
             TripBottomNavigation(
-              onPrevious: () => context.go('/trip/period'),
+              onPrevious: _goPrevious,
               onNext: _goNext,
             ),
           ],
@@ -142,121 +223,216 @@ class _TripRegionPageState extends State<TripRegionPage> {
   }
 }
 
-class _RegionCard extends StatelessWidget {
-  final _RegionItem region;
-  final bool selected;
-  final VoidCallback onTap;
+class _SelectedRegionBox extends StatelessWidget {
+  final List<String> selectedRegions;
+  final ValueChanged<String> onRemove;
 
-  const _RegionCard({
-    required this.region,
-    required this.selected,
-    required this.onTap,
+  const _SelectedRegionBox({
+    required this.selectedRegions,
+    required this.onRemove,
   });
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? AppColors.primary : AppColors.textSecondary;
-
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(24),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(24),
-        child: Stack(
-          children: [
-            Container(
-              width: double.infinity,
-              height: double.infinity,
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: selected ? AppColors.primary : AppColors.border,
-                  width: selected ? 2 : 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: selected
-                        ? AppColors.primary.withOpacity(0.12)
-                        : Colors.black.withOpacity(0.04),
-                    blurRadius: 18,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.check_circle_rounded,
+                color: AppColors.primary,
+                size: 23,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: Icon(
-                      region.icon,
-                      color: color,
-                      size: 30,
+              const SizedBox(width: 8),
+              Text(
+                '선택한 지역',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${selectedRegions.length}개',
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 14),
+
+          if (selectedRegions.isEmpty)
+            const Text(
+              '아직 선택한 지역이 없습니다.',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w700,
+              ),
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: selectedRegions.map((region) {
+                return InputChip(
+                  label: Text(
+                    region,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
+                  onDeleted: () => onRemove(region),
+                  deleteIcon: const Icon(
+                    Icons.close_rounded,
+                    size: 18,
+                  ),
+                  backgroundColor: const Color(0xFFEFF6FF),
+                  side: const BorderSide(
+                    color: Color(0xFFBFDBFE),
+                  ),
+                );
+              }).toList(),
+            ),
+        ],
+      ),
+    );
+  }
+}
 
-                  const Spacer(),
+class _RegionExpansionCard extends StatelessWidget {
+  final _RegionGroup group;
+  final Set<String> selectedRegions;
+  final ValueChanged<String> onToggleRegion;
 
-                  Text(
-                    region.name,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+  const _RegionExpansionCard({
+    required this.group,
+    required this.selectedRegions,
+    required this.onToggleRegion,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedCount = group.prefectures
+        .where((prefecture) => selectedRegions.contains(prefecture))
+        .length;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(
+          dividerColor: Colors.transparent,
+        ),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(
+            horizontal: 18,
+            vertical: 6,
+          ),
+          childrenPadding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
+          title: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  group.name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 17,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              if (selectedCount > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFF6FF),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    '$selectedCount개 선택',
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 12,
                       fontWeight: FontWeight.w900,
-                      color: selected ? AppColors.primary : AppColors.textPrimary,
                     ),
                   ),
-
-                  const SizedBox(height: 8),
-
-                  Text(
-                    region.description,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      height: 1.35,
-                    ),
-                  ),
-                ],
+                ),
+            ],
+          ),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              group.description,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 13,
+                height: 1.35,
               ),
             ),
+          ),
+          children: group.prefectures.map((prefecture) {
+            final selected = selectedRegions.contains(prefecture);
 
-            if (selected)
-              Positioned(
-                top: 12,
-                right: 12,
-                child: Container(
-                  width: 28,
-                  height: 28,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.check_rounded,
-                    color: Colors.white,
-                    size: 19,
-                  ),
+            return CheckboxListTile(
+              value: selected,
+              onChanged: (_) => onToggleRegion(prefecture),
+              dense: true,
+              activeColor: AppColors.primary,
+              controlAffinity: ListTileControlAffinity.leading,
+              title: Text(
+                prefecture,
+                style: TextStyle(
+                  fontWeight: selected ? FontWeight.w900 : FontWeight.w700,
+                  color: selected ? AppColors.primary : AppColors.textPrimary,
                 ),
               ),
-          ],
+            );
+          }).toList(),
         ),
       ),
     );
   }
 }
 
-class _RegionItem {
+class _RegionGroup {
   final String name;
   final String description;
-  final IconData icon;
+  final List<String> prefectures;
 
-  const _RegionItem({
+  const _RegionGroup({
     required this.name,
     required this.description,
-    required this.icon,
+    required this.prefectures,
   });
 }

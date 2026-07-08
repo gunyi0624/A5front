@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_drawer.dart';
 
 class HomePage extends StatelessWidget {
@@ -30,7 +30,7 @@ class HomePage extends StatelessWidget {
                   const SizedBox(height: 28),
 
                   _CreateTripCard(
-                    onTap: () => context.go('/trip/period'),
+                    onTap: () => context.go(AppRoutes.tripPeriod),
                   ),
 
                   const SizedBox(height: 26),
@@ -38,7 +38,7 @@ class HomePage extends StatelessWidget {
                   _SectionHeader(
                     title: '내 여행 일정',
                     actionText: '전체보기',
-                    onActionTap: () => context.go('/schedule'),
+                    onActionTap: () => context.go(AppRoutes.schedule),
                   ),
 
                   const SizedBox(height: 12),
@@ -48,7 +48,7 @@ class HomePage extends StatelessWidget {
                     date: '2026.07.02 ~ 2026.07.05',
                     duration: '3박 4일',
                     status: '진행 중',
-                    onTap: () => context.go('/result'),
+                    onTap: () => context.go(AppRoutes.result),
                   ),
 
                   const SizedBox(height: 26),
@@ -69,7 +69,7 @@ class HomePage extends StatelessWidget {
                           icon: Icons.info_outline_rounded,
                           title: '정보 서비스',
                           description: '일본 여행에 필요한 정보를 확인하세요.',
-                          onTap: () => context.go('/information'),
+                          onTap: () => context.go(AppRoutes.information),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -78,7 +78,7 @@ class HomePage extends StatelessWidget {
                           icon: Icons.local_hospital_rounded,
                           title: '긴급 시설',
                           description: '주변 긴급 시설을 확인하세요.',
-                          onTap: () => context.go('/emergency'),
+                          onTap: () => context.go(AppRoutes.emergency),
                           isEmergency: true,
                         ),
                       ),

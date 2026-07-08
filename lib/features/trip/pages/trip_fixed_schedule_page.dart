@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../widgets/trip_step_indicator.dart';
 import '../widgets/trip_step_header.dart';
 import '../widgets/trip_bottom_navigation.dart';
+import '../../../core/router/app_router.dart';
 
 class TripFixedSchedulePage extends StatefulWidget {
   const TripFixedSchedulePage({super.key});
@@ -139,8 +140,12 @@ class _TripFixedSchedulePageState extends State<TripFixedSchedulePage> {
     });
   }
 
-  void _generateAiSchedule() {
-    context.go('/loading');
+  void _goPrevious() {
+    context.go(AppRoutes.tripEntryExit);
+  }
+
+  void _goNext() {
+    context.go(AppRoutes.tripRegion);
   }
 
   @override
@@ -150,7 +155,7 @@ class _TripFixedSchedulePageState extends State<TripFixedSchedulePage> {
       body: SafeArea(
         child: Column(
           children: [
-            const TripStepHeader(currentStep: 6),
+            const TripStepHeader(currentStep: 3),
 
             Expanded(
               child: SingleChildScrollView(
@@ -158,13 +163,14 @@ class _TripFixedSchedulePageState extends State<TripFixedSchedulePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const TripStepIndicator(currentStep: 6),
+                    const TripStepIndicator(currentStep: 3),
 
                     const SizedBox(height: 34),
 
                     Text(
                       '꼭 넣어야 할\n일정이 있나요?',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      style:
+                      Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.w900,
                         height: 1.25,
                       ),
@@ -173,7 +179,7 @@ class _TripFixedSchedulePageState extends State<TripFixedSchedulePage> {
                     const SizedBox(height: 12),
 
                     Text(
-                      '예약한 식당, 공연, 항공편처럼 반드시 고정해야 하는 일정을 입력해주세요.',
+                      '예약한 식당, 공연, 투어처럼 반드시 고정해야 하는 일정을 입력해주세요.',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: AppColors.textSecondary,
                         height: 1.45,
@@ -190,7 +196,7 @@ class _TripFixedSchedulePageState extends State<TripFixedSchedulePage> {
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
+                            color: Colors.black.withValues(alpha: 0.04),
                             blurRadius: 18,
                             offset: const Offset(0, 8),
                           ),
@@ -201,7 +207,8 @@ class _TripFixedSchedulePageState extends State<TripFixedSchedulePage> {
                         children: [
                           Text(
                             '고정 일정 추가',
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            style:
+                            Theme.of(context).textTheme.bodyLarge?.copyWith(
                               fontWeight: FontWeight.w900,
                             ),
                           ),
@@ -277,7 +284,8 @@ class _TripFixedSchedulePageState extends State<TripFixedSchedulePage> {
                               ),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: AppColors.primary,
-                                side: const BorderSide(color: AppColors.primary),
+                                side:
+                                const BorderSide(color: AppColors.primary),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(18),
                                 ),
@@ -294,7 +302,8 @@ class _TripFixedSchedulePageState extends State<TripFixedSchedulePage> {
                       children: [
                         Text(
                           '추가된 고정 일정',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          style:
+                          Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w900,
                           ),
                         ),
@@ -312,7 +321,7 @@ class _TripFixedSchedulePageState extends State<TripFixedSchedulePage> {
                     const SizedBox(height: 12),
 
                     if (fixedSchedules.isEmpty)
-                      _EmptyFixedSchedule()
+                      const _EmptyFixedSchedule()
                     else
                       ...fixedSchedules.map(
                             (item) => _FixedScheduleCard(
@@ -328,9 +337,8 @@ class _TripFixedSchedulePageState extends State<TripFixedSchedulePage> {
             ),
 
             TripBottomNavigation(
-              onPrevious: () => context.go('/trip/transport'),
-              onNext: _generateAiSchedule,
-              nextText: 'AI 일정 생성하기',
+              onPrevious: _goPrevious,
+              onNext: _goNext,
             ),
           ],
         ),
@@ -428,7 +436,7 @@ class _FixedScheduleCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -440,7 +448,7 @@ class _FixedScheduleCard extends StatelessWidget {
             width: 54,
             height: 54,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(18),
             ),
             child: const Icon(
@@ -483,6 +491,8 @@ class _FixedScheduleCard extends StatelessWidget {
 }
 
 class _EmptyFixedSchedule extends StatelessWidget {
+  const _EmptyFixedSchedule();
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -499,7 +509,7 @@ class _EmptyFixedSchedule extends StatelessWidget {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.08),
+              color: AppColors.primary.withValues(alpha: 0.08),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -517,7 +527,7 @@ class _EmptyFixedSchedule extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '필수 일정이 없다면 바로 AI 일정을 생성해도 됩니다.',
+            '필수 일정이 없다면 바로 다음 단계로 넘어가도 됩니다.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium,
           ),
