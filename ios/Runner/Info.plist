@@ -5,7 +5,14 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Ai Travel Planner</string>
+	<string>AI 여행 플래너</string>
+
+	<key>NSLocationWhenInUseUsageDescription</key>
+    <string>주변 긴급 시설과 여행 정보를 제공하기 위해 현재 위치 권한이 필요합니다.</string>
+
+    <key>NSUserNotificationUsageDescription</key>
+    <string>날씨 변화와 여행 일정 알림을 제공하기 위해 알림 권한이 필요합니다.</string>
+
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

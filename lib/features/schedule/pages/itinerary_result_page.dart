@@ -6,14 +6,26 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_confirm_dialog.dart';
 
 class ItineraryResultPage extends StatefulWidget {
-  const ItineraryResultPage({super.key});
+  final ItinerarySummary? summary;
+
+  const ItineraryResultPage({
+    super.key,
+    this.summary,
+  });
 
   @override
   State<ItineraryResultPage> createState() => _ItineraryResultPageState();
 }
 
 class _ItineraryResultPageState extends State<ItineraryResultPage> {
-  bool isSaved = false;
+  late bool isSaved;
+
+  @override
+  void initState() {
+    super.initState();
+
+    isSaved = widget.summary != null;
+  }
 
   final List<_ItineraryItem> items = [
     _ItineraryItem(
@@ -70,15 +82,46 @@ class _ItineraryResultPageState extends State<ItineraryResultPage> {
         isSaved = true;
       });
 
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('일정이 저장되었습니다.'),
+        ),
+      );
+
       context.go(AppRoutes.schedule);
     } else if (result == AppLeaveDialogResult.discard) {
-      context.go(AppRoutes.home);
+      await _confirmDiscardAndLeave();
     }
 
     return false;
   }
 
+  Future<void> _confirmDiscardAndLeave() async {
+    final confirmDiscard = await showAppConfirmDialog(
+      context: context,
+      title: '정말 저장하지 않으시겠습니까?',
+      message: '지금까지 작성한 내용이 영구히 삭제됩니다.',
+      confirmText: '저장하지 않기',
+      type: AppConfirmDialogType.danger,
+    );
+
+    if (!mounted) return;
+
+    if (confirmDiscard) {
+      context.go(AppRoutes.home);
+    }
+  }
+
   void _saveSchedule() {
+    if (isSaved) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('이미 저장된 일정입니다.'),
+        ),
+      );
+      return;
+    }
+
     setState(() {
       isSaved = true;
     });
@@ -88,8 +131,6 @@ class _ItineraryResultPageState extends State<ItineraryResultPage> {
         content: Text('일정이 저장되었습니다.'),
       ),
     );
-
-    context.go(AppRoutes.schedule);
   }
 
   Future<void> _deleteItem(_ItineraryItem item) async {
@@ -326,7 +367,9 @@ class _ItineraryResultPageState extends State<ItineraryResultPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const _TripSummaryCard(),
+                      _TripSummaryCard(
+                        summary: widget.summary,
+                      ),
 
                       const SizedBox(height: 22),
 
@@ -362,7 +405,7 @@ class _ItineraryResultPageState extends State<ItineraryResultPage> {
                   children: [
                     FilledButton(
                       onPressed: _saveSchedule,
-                      child: const Text('일정 저장'),
+                      child: Text(isSaved ? '저장됨' : '일정 저장'),
                     ),
                     const SizedBox(height: 10),
                     SizedBox(
@@ -396,10 +439,16 @@ class _ItineraryResultPageState extends State<ItineraryResultPage> {
 }
 
 class _TripSummaryCard extends StatelessWidget {
-  const _TripSummaryCard();
+  final ItinerarySummary? summary;
+
+  const _TripSummaryCard({
+    required this.summary,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final displaySummary = summary ?? ItinerarySummary.defaultGenerated();
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -414,21 +463,21 @@ class _TripSummaryCard extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(24),
       ),
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '도쿄 여행',
-            style: TextStyle(
+            displaySummary.title,
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 22,
               fontWeight: FontWeight.w900,
             ),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
-            '2026-07-02(목) · 3박 4일 · 식도락 / 쇼핑 / 힐링',
-            style: TextStyle(
+            '${displaySummary.period} · ${displaySummary.duration} · ${displaySummary.theme}',
+            style: const TextStyle(
               color: Colors.white70,
               fontSize: 14,
               height: 1.4,
@@ -675,6 +724,54 @@ class _BottomSheetAction extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class ItinerarySummary {
+  final String title;
+  final String region;
+  final String period;
+  final String duration;
+  final String theme;
+  final String status;
+  final bool isCompleted;
+
+  const ItinerarySummary({
+    required this.title,
+    required this.region,
+    required this.period,
+    required this.duration,
+    required this.theme,
+    required this.status,
+    required this.isCompleted,
+  });
+
+  factory ItinerarySummary.defaultGenerated() {
+    return const ItinerarySummary(
+      title: '도쿄 여행',
+      region: '도쿄',
+      period: '2026-07-02(목)',
+      duration: '3박 4일',
+      theme: '식도락 / 쇼핑 / 힐링',
+      status: '저장 전',
+      isCompleted: false,
+    );
+  }
+
+  factory ItinerarySummary.fromExtra(Object? extra) {
+    if (extra is! Map) {
+      return ItinerarySummary.defaultGenerated();
+    }
+
+    return ItinerarySummary(
+      title: extra['title']?.toString() ?? '도쿄 여행',
+      region: extra['region']?.toString() ?? '도쿄',
+      period: extra['period']?.toString() ?? '2026-07-02(목)',
+      duration: extra['duration']?.toString() ?? '3박 4일',
+      theme: extra['theme']?.toString() ?? '식도락 / 쇼핑 / 힐링',
+      status: extra['status']?.toString() ?? '저장 전',
+      isCompleted: extra['isCompleted'] == true,
     );
   }
 }

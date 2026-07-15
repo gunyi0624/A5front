@@ -41,6 +41,14 @@ final appRouter = GoRouter(
     ),
 
     GoRoute(
+      path: AppRoutes.permissionSettings,
+      name: AppRouteNames.permissionSettings,
+      builder: (context, state) => const PermissionPage(
+        isSettingsMode: true,
+      ),
+    ),
+
+    GoRoute(
       path: AppRoutes.home,
       name: AppRouteNames.home,
       builder: (context, state) => const HomePage(),
@@ -121,7 +129,13 @@ final appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.result,
       name: AppRouteNames.result,
-      builder: (context, state) => const ItineraryResultPage(),
+      builder: (context, state) {
+        final extra = state.extra;
+
+        return ItineraryResultPage(
+          summary: extra == null ? null : ItinerarySummary.fromExtra(extra),
+        );
+      },
     ),
   ],
 );
@@ -131,6 +145,7 @@ class AppRoutes {
 
   static const login = '/login';
   static const permission = '/permission';
+  static const permissionSettings = '/permission-settings';
 
   static const home = '/home';
   static const mypage = '/mypage';
@@ -155,6 +170,7 @@ class AppRouteNames {
 
   static const login = 'login';
   static const permission = 'permission';
+  static const permissionSettings = 'permissionSettings';
 
   static const home = 'home';
   static const mypage = 'mypage';

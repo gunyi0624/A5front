@@ -49,6 +49,8 @@ class _SchedulePageState extends State<SchedulePage> {
 
   String keyword = '';
 
+  bool get hasSearchKeyword => keyword.trim().isNotEmpty;
+
   @override
   void dispose() {
     searchController.dispose();
@@ -56,7 +58,7 @@ class _SchedulePageState extends State<SchedulePage> {
   }
 
   List<_ScheduleItem> get filteredSchedules {
-    if (keyword.trim().isEmpty) return schedules;
+    if (!hasSearchKeyword) return schedules;
 
     final query = keyword.trim().toLowerCase();
 
@@ -65,6 +67,14 @@ class _SchedulePageState extends State<SchedulePage> {
           item.region.toLowerCase().contains(query) ||
           item.period.toLowerCase().contains(query);
     }).toList();
+  }
+
+  void _clearSearch() {
+    searchController.clear();
+
+    setState(() {
+      keyword = '';
+    });
   }
 
   Future<void> _showDeleteDialog(_ScheduleItem item) async {
@@ -76,51 +86,44 @@ class _SchedulePageState extends State<SchedulePage> {
       type: AppConfirmDialogType.danger,
     );
 
+    if (!mounted) return;
+
     if (result) {
       setState(() {
         schedules.remove(item);
       });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('일정이 삭제되었습니다.'),
+        ),
+      );
     }
   }
 
   Future<void> _showRenameDialog(_ScheduleItem item) async {
-    final controller = TextEditingController(text: item.title);
-
     final result = await showDialog<String>(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('일정 제목 수정'),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            decoration: const InputDecoration(
-              hintText: '새 제목을 입력하세요',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('취소'),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.pop(context, controller.text.trim());
-              },
-              child: const Text('저장'),
-            ),
-          ],
+        return _RenameScheduleDialog(
+          initialTitle: item.title,
         );
       },
     );
 
-    controller.dispose();
-
+    if (!mounted) return;
     if (result == null || result.isEmpty) return;
+    if (result == item.title) return;
 
     setState(() {
       item.title = result;
     });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('일정 제목이 수정되었습니다.'),
+      ),
+    );
   }
 
   void _showCardMenu(_ScheduleItem item) {
@@ -211,11 +214,13 @@ class _SchedulePageState extends State<SchedulePage> {
 
                   _SearchBox(
                     controller: searchController,
+                    hasText: hasSearchKeyword,
                     onChanged: (value) {
                       setState(() {
                         keyword = value;
                       });
                     },
+                    onClear: _clearSearch,
                   ),
 
                   const SizedBox(height: 24),
@@ -223,7 +228,7 @@ class _SchedulePageState extends State<SchedulePage> {
                   Row(
                     children: [
                       Text(
-                        '전체 일정',
+                        hasSearchKeyword ? '검색 결과' : '전체 일정',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w900,
                         ),
@@ -242,12 +247,20 @@ class _SchedulePageState extends State<SchedulePage> {
                   const SizedBox(height: 12),
 
                   if (items.isEmpty)
-                    _EmptySchedule()
+                    _EmptySchedule(
+                      isSearchResult: hasSearchKeyword,
+                      onCreateTap: () => context.go(AppRoutes.tripPeriod),
+                    )
                   else
                     ...items.map(
                           (item) => _ScheduleCard(
                         item: item,
-                        onTap: () => context.go(AppRoutes.result),
+                            onTap: () {
+                              context.go(
+                                AppRoutes.result,
+                                extra: item.toExtra(),
+                              );
+                            },
                         onMoreTap: () => _showCardMenu(item),
                       ),
                     ),
@@ -263,11 +276,15 @@ class _SchedulePageState extends State<SchedulePage> {
 
 class _SearchBox extends StatelessWidget {
   final TextEditingController controller;
+  final bool hasText;
   final ValueChanged<String> onChanged;
+  final VoidCallback onClear;
 
   const _SearchBox({
     required this.controller,
+    required this.hasText,
     required this.onChanged,
+    required this.onClear,
   });
 
   @override
@@ -297,6 +314,14 @@ class _SearchBox extends StatelessWidget {
               ),
             ),
           ),
+          if (hasText)
+            IconButton(
+              onPressed: onClear,
+              icon: const Icon(
+                Icons.close_rounded,
+                color: AppColors.textSecondary,
+              ),
+            ),
         ],
       ),
     );
@@ -368,6 +393,8 @@ class _ScheduleCard extends StatelessWidget {
                         children: [
                           Text(
                             item.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style:
                             Theme.of(context).textTheme.bodyLarge?.copyWith(
                               fontWeight: FontWeight.w900,
@@ -494,8 +521,21 @@ class _InfoRow extends StatelessWidget {
 }
 
 class _EmptySchedule extends StatelessWidget {
+  final bool isSearchResult;
+  final VoidCallback onCreateTap;
+
+  const _EmptySchedule({
+    required this.isSearchResult,
+    required this.onCreateTap,
+  });
+
   @override
   Widget build(BuildContext context) {
+    final title = isSearchResult ? '검색 결과가 없습니다.' : '저장된 일정이 없습니다.';
+    final description = isSearchResult
+        ? '다른 제목, 지역, 기간으로 검색해보세요.'
+        : '여행 조건을 입력하고 AI가 추천하는 일정을 만들어보세요.';
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 42),
@@ -512,27 +552,144 @@ class _EmptySchedule extends StatelessWidget {
               color: AppColors.primary.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.event_busy_rounded,
+            child: Icon(
+              isSearchResult
+                  ? Icons.search_off_rounded
+                  : Icons.event_busy_rounded,
               color: AppColors.primary,
               size: 38,
             ),
           ),
           const SizedBox(height: 18),
           Text(
-            '검색 결과가 없습니다.',
+            title,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               fontWeight: FontWeight.w900,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            '다른 제목, 지역, 기간으로 검색해보세요.',
+            description,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium,
           ),
+          if (!isSearchResult) ...[
+            const SizedBox(height: 20),
+            FilledButton(
+              onPressed: onCreateTap,
+              child: const Text('AI 일정 만들기'),
+            ),
+          ],
         ],
       ),
+    );
+  }
+}
+
+class _RenameScheduleDialog extends StatefulWidget {
+  final String initialTitle;
+
+  const _RenameScheduleDialog({
+    required this.initialTitle,
+  });
+
+  @override
+  State<_RenameScheduleDialog> createState() => _RenameScheduleDialogState();
+}
+
+class _RenameScheduleDialogState extends State<_RenameScheduleDialog> {
+  late final TextEditingController controller;
+  String? errorText;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = TextEditingController(text: widget.initialTitle);
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final newTitle = controller.text.trim();
+
+    if (newTitle.isEmpty) {
+      setState(() {
+        errorText = '제목을 입력해주세요.';
+      });
+      return;
+    }
+
+    Navigator.pop(context, newTitle);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(22),
+      ),
+      title: const Text(
+        '일정 제목 수정',
+        style: TextStyle(
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+      content: TextField(
+        controller: controller,
+        autofocus: true,
+        maxLength: 20,
+        decoration: InputDecoration(
+          hintText: '새 제목을 입력하세요',
+          errorText: errorText,
+          counterText: '',
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+        onChanged: (_) {
+          if (errorText != null) {
+            setState(() {
+              errorText = null;
+            });
+          }
+        },
+        onSubmitted: (_) => _save(),
+      ),
+      actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
+      actions: [
+        SizedBox(
+          width: double.infinity,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FilledButton(
+                onPressed: _save,
+                child: const Text('저장'),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text(
+                    '취소',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -600,4 +757,16 @@ class _ScheduleItem {
     required this.theme,
     required this.isCompleted,
   });
+
+  Map<String, dynamic> toExtra() {
+    return {
+      'title': title,
+      'region': region,
+      'period': period,
+      'duration': duration,
+      'theme': theme,
+      'status': status,
+      'isCompleted': isCompleted,
+    };
+  }
 }

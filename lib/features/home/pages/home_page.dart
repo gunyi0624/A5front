@@ -4,12 +4,89 @@ import 'package:go_router/go_router.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_drawer.dart';
+import '../../../services/permission_service.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
+  bool isLocationPermissionLoading = true;
+  bool locationPermissionGranted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _loadLocationPermissionStatus();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadLocationPermissionStatus();
+    }
+  }
+
+  Future<void> _loadLocationPermissionStatus() async {
+    final locationGranted = await PermissionService.isLocationGranted();
+
+    if (!mounted) return;
+
+    setState(() {
+      locationPermissionGranted = locationGranted;
+      isLocationPermissionLoading = false;
+    });
+  }
+
+  void _goEmergencyPage() {
+    if (locationPermissionGranted) {
+      context.go(AppRoutes.emergency);
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('긴급 시설 안내를 사용하려면 위치 권한이 필요합니다.'),
+        action: SnackBarAction(
+          label: '권한 설정',
+          onPressed: () {
+            context.go(AppRoutes.permissionSettings);
+          },
+        ),
+      ),
+    );
+  }
+
+  void _goTokyoTripDetail() {
+    context.go(
+      AppRoutes.result,
+      extra: {
+        'title': '도쿄 여행',
+        'region': '도쿄',
+        'period': '2026.07.02 ~ 2026.07.05',
+        'duration': '3박 4일',
+        'theme': '식도락 · 쇼핑 · 힐링',
+        'status': '진행 중',
+        'isCompleted': false,
+      },
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final emergencyDisabled =
+        !isLocationPermissionLoading && !locationPermissionGranted;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       endDrawer: const AppDrawer(currentRoute: AppRoutes.home),
@@ -48,7 +125,7 @@ class HomePage extends StatelessWidget {
                     date: '2026.07.02 ~ 2026.07.05',
                     duration: '3박 4일',
                     status: '진행 중',
-                    onTap: () => context.go(AppRoutes.result),
+                    onTap: _goTokyoTripDetail,
                   ),
 
                   const SizedBox(height: 26),
@@ -77,9 +154,13 @@ class HomePage extends StatelessWidget {
                         child: _FeatureCard(
                           icon: Icons.local_hospital_rounded,
                           title: '긴급 시설',
-                          description: '주변 긴급 시설을 확인하세요.',
-                          onTap: () => context.go(AppRoutes.emergency),
+                          description: emergencyDisabled
+                              ? '위치 권한 허용 후 사용할 수 있습니다.'
+                              : '주변 긴급 시설을 확인하세요.',
+                          onTap: _goEmergencyPage,
                           isEmergency: true,
+                          isDisabled: emergencyDisabled,
+                          isLoading: isLocationPermissionLoading,
                         ),
                       ),
                     ],
@@ -383,6 +464,8 @@ class _FeatureCard extends StatelessWidget {
   final String description;
   final VoidCallback onTap;
   final bool isEmergency;
+  final bool isDisabled;
+  final bool isLoading;
 
   const _FeatureCard({
     required this.icon,
@@ -390,48 +473,69 @@ class _FeatureCard extends StatelessWidget {
     required this.description,
     required this.onTap,
     this.isEmergency = false,
+    this.isDisabled = false,
+    this.isLoading = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final color = isEmergency ? AppColors.emergency : AppColors.primary;
+    final effectiveColor = isDisabled ? AppColors.textSecondary : color;
 
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(22),
-      child: InkWell(
-        onTap: onTap,
+    return Opacity(
+      opacity: isDisabled ? 0.55 : 1,
+      child: Material(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(22),
-        child: Container(
-          height: 150,
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(
-                icon,
-                color: color,
-                size: 30,
-              ),
-              const Spacer(),
-              Text(
-                title,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.w900,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(22),
+          child: Container(
+            height: 150,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(22),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (isLoading)
+                  const SizedBox(
+                    width: 30,
+                    height: 30,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                    ),
+                  )
+                else
+                  Icon(
+                    icon,
+                    color: effectiveColor,
+                    size: 30,
+                  ),
+                const Spacer(),
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.w900,
+                    color: isDisabled
+                        ? AppColors.textSecondary
+                        : AppColors.textPrimary,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                description,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontSize: 12,
-                  height: 1.35,
+                const SizedBox(height: 6),
+                Text(
+                  description,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontSize: 12,
+                    height: 1.35,
+                    color: isDisabled
+                        ? AppColors.textSecondary
+                        : AppColors.textSecondary,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
