@@ -15,113 +15,143 @@ class TripRegionPage extends StatefulWidget {
 }
 
 class _TripRegionPageState extends State<TripRegionPage> {
+  static const int maxSelectedRegions = 50;
+
   final Set<String> selectedRegions = {};
+  final TextEditingController searchController = TextEditingController();
 
   final List<_RegionGroup> regionGroups = const [
     _RegionGroup(
       name: '홋카이도',
-      description: '삿포로, 오타루, 하코다테 등 북해도 여행 지역',
-      prefectures: [
-        '홋카이도',
+      description: '삿포로, 오타루, 하코다테 등 홋카이도 주요 여행 도시',
+      cities: [
+        '삿포로',
+        '오타루',
+        '하코다테',
+        '아사히카와',
+        '후라노',
       ],
     ),
     _RegionGroup(
       name: '도호쿠',
-      description: '아오모리, 센다이 등 일본 북동부 지역',
-      prefectures: [
-        '미야기',
+      description: '센다이, 아오모리 등 일본 북동부의 주요 여행 도시',
+      cities: [
+        '센다이',
         '아오모리',
-        '이와테',
-        '아키타',
+        '히로사키',
+        '모리오카',
         '야마가타',
-        '후쿠시마',
+        '아이즈와카마쓰',
       ],
     ),
     _RegionGroup(
       name: '간토',
-      description: '도쿄, 요코하마 등 수도권 중심 지역',
-      prefectures: [
+      description: '도쿄, 요코하마 등 수도권 중심의 주요 여행 도시',
+      cities: [
         '도쿄',
-        '가나가와',
+        '요코하마',
+        '가마쿠라',
+        '닛코',
+        '가와고에',
         '지바',
-        '사이타마',
-        '이바라키',
-        '도치기',
-        '군마',
       ],
     ),
     _RegionGroup(
       name: '주부',
-      description: '나고야, 시즈오카, 나가노 등 일본 중부 지역',
-      prefectures: [
-        '아이치',
+      description: '나고야, 가나자와 등 일본 중부의 주요 여행 도시',
+      cities: [
+        '나고야',
+        '가나자와',
+        '다카야마',
+        '마쓰모토',
         '시즈오카',
-        '나가노',
-        '야마나시',
-        '기후',
         '니가타',
-        '도야마',
-        '이시카와',
-        '후쿠이',
       ],
     ),
     _RegionGroup(
       name: '간사이',
-      description: '오사카, 교토, 고베, 나라 중심의 인기 여행 지역',
-      prefectures: [
+      description: '오사카, 교토, 고베 등 인기 여행 도시',
+      cities: [
         '오사카',
         '교토',
-        '효고',
+        '고베',
         '나라',
-        '시가',
+        '히메지',
         '와카야마',
-        '미에',
       ],
     ),
     _RegionGroup(
       name: '주고쿠',
-      description: '히로시마, 오카야마, 돗토리 등 서일본 지역',
-      prefectures: [
+      description: '히로시마, 오카야마 등 서일본의 주요 여행 도시',
+      cities: [
         '히로시마',
         '오카야마',
-        '야마구치',
+        '구라시키',
         '돗토리',
-        '시마네',
+        '마쓰에',
+        '시모노세키',
       ],
     ),
     _RegionGroup(
       name: '시코쿠',
-      description: '가가와, 에히메 등 조용한 로컬 여행 지역',
-      prefectures: [
-        '가가와',
-        '에히메',
-        '도쿠시마',
+      description: '마쓰야마, 다카마쓰 등 시코쿠의 주요 여행 도시',
+      cities: [
+        '마쓰야마',
+        '다카마쓰',
         '고치',
+        '도쿠시마',
+        '나루토',
       ],
     ),
     _RegionGroup(
-      name: '규슈·오키나와',
-      description: '후쿠오카, 나가사키, 오키나와 등 남부 여행 지역',
-      prefectures: [
+      name: '규슈',
+      description: '후쿠오카, 나가사키 등 규슈의 주요 여행 도시',
+      cities: [
         '후쿠오카',
-        '오키나와',
-        '구마모토',
         '나가사키',
-        '오이타',
+        '구마모토',
+        '벳푸',
         '가고시마',
-        '미야자키',
-        '사가',
+      ],
+    ),
+    _RegionGroup(
+      name: '오키나와',
+      description: '나하, 이시가키 등 오키나와의 주요 여행 도시',
+      cities: [
+        '나하',
+        '이시가키',
+        '미야코지마',
+        '나고',
+        '오키나와',
       ],
     ),
   ];
 
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
   void _toggleRegion(String region) {
-    setState(() {
-      if (selectedRegions.contains(region)) {
+    if (selectedRegions.contains(region)) {
+      setState(() {
         selectedRegions.remove(region);
-      } else {
-        selectedRegions.add(region);
-      }
+      });
+      return;
+    }
+
+    if (selectedRegions.length >= maxSelectedRegions) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('지역은 최대 50개까지 선택할 수 있습니다.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      selectedRegions.add(region);
     });
   }
 
@@ -129,6 +159,25 @@ class _TripRegionPageState extends State<TripRegionPage> {
     setState(() {
       selectedRegions.remove(region);
     });
+  }
+
+  void _searchRegion() {
+    final keyword = searchController.text.trim();
+
+    if (keyword.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('검색할 도시 또는 지역을 입력해주세요.'),
+        ),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Google 지도 검색은 API 연결 단계에서 활성화됩니다.'),
+      ),
+    );
   }
 
   void _goPrevious() {
@@ -161,7 +210,7 @@ class _TripRegionPageState extends State<TripRegionPage> {
 
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(22, 20, 22, 28),
+                padding: const EdgeInsets.fromLTRB(22, 20, 22, 22),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -181,7 +230,7 @@ class _TripRegionPageState extends State<TripRegionPage> {
                     const SizedBox(height: 12),
 
                     Text(
-                      '여행할 도도부현을 여러 개 선택하면 선택한 지역에 맞는 장소와 동선을 추천합니다.',
+                      '대표도시를 선택하거나 검색을 통해 원하는 여행 지역을 추가할 수 있습니다.',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: AppColors.textSecondary,
                         height: 1.45,
@@ -190,12 +239,12 @@ class _TripRegionPageState extends State<TripRegionPage> {
 
                     const SizedBox(height: 24),
 
-                    _SelectedRegionBox(
-                      selectedRegions: selectedList,
-                      onRemove: _removeRegion,
+                    _RegionSearchBar(
+                      controller: searchController,
+                      onSearch: _searchRegion,
                     ),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 22),
 
                     ...regionGroups.map(
                           (group) => Padding(
@@ -212,11 +261,76 @@ class _TripRegionPageState extends State<TripRegionPage> {
               ),
             ),
 
+            Padding(
+              padding: const EdgeInsets.fromLTRB(22, 10, 22, 10),
+              child: _SelectedRegionBox(
+                selectedRegions: selectedList,
+                onRemove: _removeRegion,
+              ),
+            ),
+
             TripBottomNavigation(
               onPrevious: _goPrevious,
               onNext: _goNext,
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RegionSearchBar extends StatelessWidget {
+  final TextEditingController controller;
+  final VoidCallback onSearch;
+
+  const _RegionSearchBar({
+    required this.controller,
+    required this.onSearch,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: AppColors.border,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: controller,
+        textInputAction: TextInputAction.search,
+        onSubmitted: (_) => onSearch(),
+        decoration: InputDecoration(
+          hintText: '도시 또는 지역 검색',
+          hintStyle: const TextStyle(
+            color: AppColors.textSecondary,
+          ),
+          prefixIcon: const Icon(
+            Icons.search_rounded,
+            color: AppColors.textSecondary,
+          ),
+          suffixIcon: IconButton(
+            onPressed: onSearch,
+            icon: const Icon(
+              Icons.arrow_forward_rounded,
+              color: AppColors.primary,
+            ),
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 17,
+          ),
         ),
       ),
     );
@@ -236,20 +350,23 @@ class _SelectedRegionBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.fromLTRB(16, 13, 16, 13),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: AppColors.border,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 14,
+            offset: const Offset(0, -2),
           ),
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -257,7 +374,7 @@ class _SelectedRegionBox extends StatelessWidget {
               const Icon(
                 Icons.check_circle_rounded,
                 color: AppColors.primary,
-                size: 23,
+                size: 21,
               ),
               const SizedBox(width: 8),
               Text(
@@ -277,7 +394,7 @@ class _SelectedRegionBox extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
 
           if (selectedRegions.isEmpty)
             const Text(
@@ -288,28 +405,34 @@ class _SelectedRegionBox extends StatelessWidget {
               ),
             )
           else
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: selectedRegions.map((region) {
-                return InputChip(
-                  label: Text(
-                    region,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w800,
+            SizedBox(
+              height: 40,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: selectedRegions.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final region = selectedRegions[index];
+
+                  return InputChip(
+                    label: Text(
+                      region,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
-                  ),
-                  onDeleted: () => onRemove(region),
-                  deleteIcon: const Icon(
-                    Icons.close_rounded,
-                    size: 18,
-                  ),
-                  backgroundColor: const Color(0xFFEFF6FF),
-                  side: const BorderSide(
-                    color: Color(0xFFBFDBFE),
-                  ),
-                );
-              }).toList(),
+                    onDeleted: () => onRemove(region),
+                    deleteIcon: const Icon(
+                      Icons.close_rounded,
+                      size: 18,
+                    ),
+                    backgroundColor: const Color(0xFFEFF6FF),
+                    side: const BorderSide(
+                      color: Color(0xFFBFDBFE),
+                    ),
+                  );
+                },
+              ),
             ),
         ],
       ),
@@ -330,18 +453,20 @@ class _RegionExpansionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final selectedCount = group.prefectures
-        .where((prefecture) => selectedRegions.contains(prefecture))
+    final selectedCount = group.cities
+        .where((city) => selectedRegions.contains(city))
         .length;
 
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(
+          color: AppColors.border,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Colors.black.withOpacity(0.03),
             blurRadius: 14,
             offset: const Offset(0, 6),
           ),
@@ -369,6 +494,7 @@ class _RegionExpansionCard extends StatelessWidget {
                   ),
                 ),
               ),
+
               if (selectedCount > 0)
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -401,20 +527,21 @@ class _RegionExpansionCard extends StatelessWidget {
               ),
             ),
           ),
-          children: group.prefectures.map((prefecture) {
-            final selected = selectedRegions.contains(prefecture);
+          children: group.cities.map((city) {
+            final selected = selectedRegions.contains(city);
 
             return CheckboxListTile(
               value: selected,
-              onChanged: (_) => onToggleRegion(prefecture),
+              onChanged: (_) => onToggleRegion(city),
               dense: true,
               activeColor: AppColors.primary,
               controlAffinity: ListTileControlAffinity.leading,
               title: Text(
-                prefecture,
+                city,
                 style: TextStyle(
                   fontWeight: selected ? FontWeight.w900 : FontWeight.w700,
-                  color: selected ? AppColors.primary : AppColors.textPrimary,
+                  color:
+                  selected ? AppColors.primary : AppColors.textPrimary,
                 ),
               ),
             );
@@ -428,11 +555,11 @@ class _RegionExpansionCard extends StatelessWidget {
 class _RegionGroup {
   final String name;
   final String description;
-  final List<String> prefectures;
+  final List<String> cities;
 
   const _RegionGroup({
     required this.name,
     required this.description,
-    required this.prefectures,
+    required this.cities,
   });
 }
