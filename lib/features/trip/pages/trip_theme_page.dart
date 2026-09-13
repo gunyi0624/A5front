@@ -15,58 +15,70 @@ class TripThemePage extends StatefulWidget {
 }
 
 class _TripThemePageState extends State<TripThemePage> {
+  static const int maxThemeSelection = 3;
+
   final Set<String> selectedThemes = {};
 
   final List<_ThemeItem> themes = const [
     _ThemeItem(
-      name: '힐링',
-      description: '여유로운 산책과 휴식',
-      icon: Icons.spa_rounded,
-    ),
-    _ThemeItem(
-      name: '자연',
-      description: '공원, 바다, 산 등 자연 중심',
-      icon: Icons.park_rounded,
-    ),
-    _ThemeItem(
-      name: '식도락',
-      description: '맛집과 현지 음식 탐방',
+      name: '맛집',
+      description: '현지 음식과 인기 맛집 탐방',
       icon: Icons.restaurant_rounded,
     ),
     _ThemeItem(
       name: '쇼핑',
-      description: '상점가, 백화점, 기념품',
+      description: '상점가, 백화점, 기념품 쇼핑',
       icon: Icons.shopping_bag_rounded,
     ),
     _ThemeItem(
-      name: '문화',
-      description: '사찰, 박물관, 전통 건축',
-      icon: Icons.temple_buddhist_rounded,
+      name: '관광',
+      description: '대표 명소와 유명 관광지 방문',
+      icon: Icons.location_city_rounded,
     ),
     _ThemeItem(
-      name: '액티비티',
-      description: '체험, 놀이공원, 활동 중심',
-      icon: Icons.local_activity_rounded,
+      name: '힐링',
+      description: '여유로운 산책과 편안한 휴식',
+      icon: Icons.spa_rounded,
     ),
     _ThemeItem(
-      name: '감성',
-      description: '카페, 사진 명소, 분위기',
+      name: '사진',
+      description: '사진 명소와 감성적인 장소',
       icon: Icons.photo_camera_rounded,
     ),
     _ThemeItem(
-      name: '서브컬처',
-      description: '애니, 게임, 캐릭터, 굿즈',
-      icon: Icons.videogame_asset_rounded,
+      name: '애니메이션',
+      description: '애니메이션, 캐릭터, 굿즈 명소',
+      icon: Icons.animation_rounded,
     ),
     _ThemeItem(
-      name: '축제',
-      description: '계절 행사와 지역 축제',
-      icon: Icons.celebration_rounded,
+      name: '문화',
+      description: '사찰, 박물관, 전통 문화 체험',
+      icon: Icons.temple_buddhist_rounded,
+    ),
+    _ThemeItem(
+      name: '자연',
+      description: '공원, 바다, 산 등 자연 명소',
+      icon: Icons.park_rounded,
+    ),
+    _ThemeItem(
+      name: '야경',
+      description: '전망대와 야경 명소 감상',
+      icon: Icons.nightlight_round,
     ),
     _ThemeItem(
       name: '온천',
-      description: '료칸, 온천, 휴양',
+      description: '온천과 료칸에서 즐기는 휴식',
       icon: Icons.hot_tub_rounded,
+    ),
+    _ThemeItem(
+      name: '액티비티',
+      description: '체험, 놀이공원, 활동 중심 여행',
+      icon: Icons.local_activity_rounded,
+    ),
+    _ThemeItem(
+      name: '카페',
+      description: '카페 탐방과 디저트 즐기기',
+      icon: Icons.local_cafe_rounded,
     ),
   ];
 
@@ -84,12 +96,24 @@ class _TripThemePageState extends State<TripThemePage> {
   }
 
   void _toggleTheme(String theme) {
-    setState(() {
-      if (selectedThemes.contains(theme)) {
+    if (selectedThemes.contains(theme)) {
+      setState(() {
         selectedThemes.remove(theme);
-      } else {
-        selectedThemes.add(theme);
-      }
+      });
+      return;
+    }
+
+    if (selectedThemes.length >= maxThemeSelection) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('여행 테마는 최대 3개까지 선택할 수 있습니다.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      selectedThemes.add(theme);
     });
   }
 
@@ -114,8 +138,10 @@ class _TripThemePageState extends State<TripThemePage> {
 
                     Text(
                       '어떤 여행을\n원하시나요?',
-                      style:
-                      Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineMedium
+                          ?.copyWith(
                         fontWeight: FontWeight.w900,
                         height: 1.25,
                       ),
@@ -124,7 +150,7 @@ class _TripThemePageState extends State<TripThemePage> {
                     const SizedBox(height: 12),
 
                     Text(
-                      '원하는 테마를 여러 개 선택하면 AI가 취향에 맞는 장소를 조합합니다.',
+                      '원하는 테마를 최대 3개까지 선택하면 AI가 취향에 맞는 장소를 조합합니다.',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: AppColors.textSecondary,
                         height: 1.45,
@@ -133,23 +159,40 @@ class _TripThemePageState extends State<TripThemePage> {
 
                     const SizedBox(height: 16),
 
-                    if (selectedThemes.isNotEmpty)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Text(
-                          '선택한 테마: ${selectedThemes.join(', ')}',
-                          style: const TextStyle(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w800,
-                            height: 1.4,
-                          ),
-                        ),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(16),
                       ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              selectedThemes.isEmpty
+                                  ? '여행 테마를 선택해주세요.'
+                                  : '선택한 테마: ${selectedThemes.join(', ')}',
+                              style: TextStyle(
+                                color: selectedThemes.isEmpty
+                                    ? AppColors.textSecondary
+                                    : AppColors.primary,
+                                fontWeight: FontWeight.w800,
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            '${selectedThemes.length}/$maxThemeSelection',
+                            style: const TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
 
                     const SizedBox(height: 24),
 
