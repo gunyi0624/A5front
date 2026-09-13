@@ -124,7 +124,7 @@ class _TripThemePageState extends State<TripThemePage> {
       body: SafeArea(
         child: Column(
           children: [
-            const TripStepHeader(currentStep: 6),
+            const TripStepHeader(currentStep: 7),
 
             Expanded(
               child: SingleChildScrollView(
@@ -132,7 +132,7 @@ class _TripThemePageState extends State<TripThemePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const TripStepIndicator(currentStep: 6),
+                    const TripStepIndicator(currentStep: 7),
 
                     const SizedBox(height: 34),
 

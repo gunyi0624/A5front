@@ -141,11 +141,11 @@ class _TripFixedSchedulePageState extends State<TripFixedSchedulePage> {
   }
 
   void _goPrevious() {
-    context.go(AppRoutes.tripEntryExit);
+    context.go(AppRoutes.tripAccommodation);
   }
 
   void _goNext() {
-    context.go(AppRoutes.tripRegion);
+    context.go(AppRoutes.tripCompanion);
   }
 
   @override
@@ -155,7 +155,7 @@ class _TripFixedSchedulePageState extends State<TripFixedSchedulePage> {
       body: SafeArea(
         child: Column(
           children: [
-            const TripStepHeader(currentStep: 3),
+            const TripStepHeader(currentStep: 5),
 
             Expanded(
               child: SingleChildScrollView(
@@ -163,7 +163,7 @@ class _TripFixedSchedulePageState extends State<TripFixedSchedulePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const TripStepIndicator(currentStep: 3),
+                    const TripStepIndicator(currentStep: 5),
 
                     const SizedBox(height: 34),
 

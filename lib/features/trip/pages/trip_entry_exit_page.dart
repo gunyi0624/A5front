@@ -129,7 +129,7 @@ class _TripEntryExitPageState extends State<TripEntryExitPage> {
   }
 
   void _goNext() {
-    context.go(AppRoutes.tripFixedSchedule);
+    context.go(AppRoutes.tripRegion);
   }
 
   void _goPrevious() {

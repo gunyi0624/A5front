@@ -181,7 +181,7 @@ class _TripRegionPageState extends State<TripRegionPage> {
   }
 
   void _goPrevious() {
-    context.go(AppRoutes.tripFixedSchedule);
+    context.go(AppRoutes.tripEntryExit);
   }
 
   void _goNext() {
@@ -194,7 +194,7 @@ class _TripRegionPageState extends State<TripRegionPage> {
       return;
     }
 
-    context.go(AppRoutes.tripCompanion);
+    context.go(AppRoutes.tripAccommodation);
   }
 
   @override
@@ -206,7 +206,7 @@ class _TripRegionPageState extends State<TripRegionPage> {
       body: SafeArea(
         child: Column(
           children: [
-            const TripStepHeader(currentStep: 4),
+            const TripStepHeader(currentStep: 3),
 
             Expanded(
               child: SingleChildScrollView(
@@ -214,7 +214,7 @@ class _TripRegionPageState extends State<TripRegionPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const TripStepIndicator(currentStep: 4),
+                    const TripStepIndicator(currentStep: 3),
 
                     const SizedBox(height: 34),
 

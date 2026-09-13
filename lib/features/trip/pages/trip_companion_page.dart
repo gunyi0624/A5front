@@ -148,7 +148,7 @@ class _TripCompanionPageState extends State<TripCompanionPage> {
       body: SafeArea(
         child: Column(
           children: [
-            const TripStepHeader(currentStep: 5),
+            const TripStepHeader(currentStep: 6),
 
             Expanded(
               child: SingleChildScrollView(
@@ -156,7 +156,7 @@ class _TripCompanionPageState extends State<TripCompanionPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const TripStepIndicator(currentStep: 5),
+                    const TripStepIndicator(currentStep: 6),
 
                     const SizedBox(height: 34),
 
@@ -280,7 +280,7 @@ class _TripCompanionPageState extends State<TripCompanionPage> {
             ),
 
             TripBottomNavigation(
-              onPrevious: () => context.go(AppRoutes.tripRegion),
+              onPrevious: () => context.go(AppRoutes.tripFixedSchedule),
               onNext: _goNext,
             ),
           ],

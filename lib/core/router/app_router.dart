@@ -10,6 +10,7 @@ import '../../features/mypage/pages/mypage_page.dart';
 import '../../features/schedule/pages/itinerary_result_page.dart';
 import '../../features/schedule/pages/schedule_page.dart';
 import '../../features/splash/pages/splash_page.dart';
+import '../../features/trip/pages/trip_accommodation_page.dart';
 import '../../features/trip/pages/trip_companion_page.dart';
 import '../../features/trip/pages/trip_fixed_schedule_page.dart';
 import '../../features/trip/pages/trip_loading_page.dart';
@@ -97,6 +98,18 @@ final appRouter = GoRouter(
     ),
 
     GoRoute(
+      path: AppRoutes.tripAccommodation,
+      name: AppRouteNames.tripAccommodation,
+      builder: (context, state) => const TripAccommodationPage(),
+    ),
+
+    GoRoute(
+      path: AppRoutes.tripFixedSchedule,
+      name: AppRouteNames.tripFixedSchedule,
+      builder: (context, state) => const TripFixedSchedulePage(),
+    ),
+
+    GoRoute(
       path: AppRoutes.tripCompanion,
       name: AppRouteNames.tripCompanion,
       builder: (context, state) => const TripCompanionPage(),
@@ -112,12 +125,6 @@ final appRouter = GoRouter(
       path: AppRoutes.tripTransport,
       name: AppRouteNames.tripTransport,
       builder: (context, state) => const TripTransportPage(),
-    ),
-
-    GoRoute(
-      path: AppRoutes.tripFixedSchedule,
-      name: AppRouteNames.tripFixedSchedule,
-      builder: (context, state) => const TripFixedSchedulePage(),
     ),
 
     GoRoute(
@@ -156,10 +163,11 @@ class AppRoutes {
   static const tripPeriod = '/trip/period';
   static const tripEntryExit = '/trip/entry-exit';
   static const tripRegion = '/trip/region';
+  static const tripAccommodation = '/trip/accommodation';
+  static const tripFixedSchedule = '/trip/fixed-schedule';
   static const tripCompanion = '/trip/companion';
   static const tripTheme = '/trip/theme';
   static const tripTransport = '/trip/transport';
-  static const tripFixedSchedule = '/trip/fixed-schedule';
 
   static const loading = '/loading';
   static const result = '/result';
@@ -181,10 +189,11 @@ class AppRouteNames {
   static const tripPeriod = 'tripPeriod';
   static const tripEntryExit = 'tripEntryExit';
   static const tripRegion = 'tripRegion';
+  static const tripAccommodation = 'tripAccommodation';
+  static const tripFixedSchedule = 'tripFixedSchedule';
   static const tripCompanion = 'tripCompanion';
   static const tripTheme = 'tripTheme';
   static const tripTransport = 'tripTransport';
-  static const tripFixedSchedule = 'tripFixedSchedule';
 
   static const loading = 'loading';
   static const result = 'result';
