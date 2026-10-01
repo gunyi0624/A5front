@@ -8,91 +8,153 @@ import '../widgets/trip_step_header.dart';
 import '../widgets/trip_step_indicator.dart';
 
 class TripEntryExitPage extends StatefulWidget {
-  const TripEntryExitPage({super.key});
+  const TripEntryExitPage({
+    super.key,
+  });
 
   @override
-  State<TripEntryExitPage> createState() => _TripEntryExitPageState();
+  State<TripEntryExitPage> createState() =>
+      _TripEntryExitPageState();
 }
 
 class _TripEntryExitPageState extends State<TripEntryExitPage> {
-  String? entryCity;
-  String? exitCity;
+  String? entryAirport;
+  String? exitAirport;
+
   TimeOfDay? entryTime;
   TimeOfDay? exitTime;
 
-  final List<String> prefectures = const [
-    '홋카이도',
-    '아오모리',
-    '이와테',
-    '미야기',
-    '아키타',
-    '야마가타',
-    '후쿠시마',
-    '도쿄',
-    '가나가와',
-    '사이타마',
-    '지바',
-    '이바라키',
-    '도치기',
-    '군마',
-    '니가타',
-    '도야마',
-    '이시카와',
-    '후쿠이',
-    '야마나시',
-    '나가노',
-    '기후',
-    '시즈오카',
-    '아이치',
-    '미에',
-    '오사카',
-    '교토',
-    '효고',
-    '나라',
-    '시가',
-    '와카야마',
-    '돗토리',
-    '시마네',
-    '오카야마',
-    '히로시마',
-    '야마구치',
-    '도쿠시마',
-    '가가와',
-    '에히메',
-    '고치',
-    '후쿠오카',
-    '사가',
-    '나가사키',
-    '구마모토',
-    '오이타',
-    '미야자키',
-    '가고시마',
-    '오키나와',
+  // =========================================================
+  // 일본 국제선 이용 공항 42개
+  //
+  // 기존 36개 공항 +
+  // 아사히카와, 쇼나이, 이즈모, 야마구치우베,
+  // 신슈 마쓰모토, 구시로 공항을 포함합니다.
+  // =========================================================
+
+  final List<_AirportGroup> airportGroups = const [
+    _AirportGroup(
+      name: '홋카이도',
+      airports: [
+        '신치토세공항',
+        '하코다테공항',
+        '오비히로공항',
+        '아사히카와공항',
+        '구시로공항',
+      ],
+    ),
+    _AirportGroup(
+      name: '도호쿠',
+      airports: [
+        '센다이공항',
+        '아키타공항',
+        '아오모리공항',
+        '하나마키공항',
+        '후쿠시마공항',
+        '쇼나이공항',
+      ],
+    ),
+    _AirportGroup(
+      name: '간토',
+      airports: [
+        '하네다공항',
+        '나리타국제공항',
+        '이바라키공항',
+      ],
+    ),
+    _AirportGroup(
+      name: '주부',
+      airports: [
+        '중부국제공항(센트레아)',
+        '도야마공항',
+        '코마츠공항',
+        '니가타공항',
+        '시즈오카공항',
+        '신슈 마쓰모토공항',
+      ],
+    ),
+    _AirportGroup(
+      name: '간사이(긴키)',
+      airports: [
+        '간사이국제공항',
+        '고베공항',
+      ],
+    ),
+    _AirportGroup(
+      name: '주고쿠',
+      airports: [
+        '요나고공항',
+        '오카야마공항',
+        '히로시마공항',
+        '이즈모공항',
+        '야마구치우베공항',
+      ],
+    ),
+    _AirportGroup(
+      name: '시코쿠',
+      airports: [
+        '타카마츠공항',
+        '마쓰야마공항',
+        '고치공항',
+        '도쿠시마공항',
+      ],
+    ),
+    _AirportGroup(
+      name: '규슈',
+      airports: [
+        '후쿠오카공항',
+        '기타큐슈공항',
+        '사가공항',
+        '오이타공항',
+        '구마모토공항',
+        '나가사키공항',
+        '미야자키공항',
+        '가고시마공항',
+      ],
+    ),
+    _AirportGroup(
+      name: '오키나와',
+      airports: [
+        '나하공항',
+        '시모지시마공항',
+        '이시가키공항',
+      ],
+    ),
   ];
 
-  Future<void> _selectCity({
+  // =========================================================
+  // 입국 / 출국 공항 선택
+  // =========================================================
+
+  Future<void> _selectAirport({
     required String title,
     required ValueChanged<String> onSelected,
   }) async {
-    final selectedCity = await showModalBottomSheet<String>(
+    final selectedAirport = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(26),
+        ),
       ),
       builder: (context) {
-        return _CitySearchBottomSheet(
+        return _AirportSearchBottomSheet(
           title: title,
-          cities: prefectures,
+          airportGroups: airportGroups,
         );
       },
     );
 
-    if (selectedCity != null) {
-      onSelected(selectedCity);
+    if (selectedAirport != null) {
+      onSelected(selectedAirport);
     }
   }
+
+  // =========================================================
+  // 입국 / 출국 시간 선택
+  // =========================================================
 
   Future<void> _selectTime({
     required TimeOfDay? initialTime,
@@ -111,30 +173,76 @@ class _TripEntryExitPageState extends State<TripEntryExitPage> {
     }
   }
 
+  // =========================================================
+  // 선택된 시간 표시
+  // 오전 / 오후 12시간 형식
+  // =========================================================
+
   String _formatTime(TimeOfDay? time) {
-    if (time == null) return '시간 선택';
+    if (time == null) {
+      return '시간 선택';
+    }
 
     final hour = time.hour;
     final minute = time.minute.toString().padLeft(2, '0');
     final period = hour < 12 ? '오전' : '오후';
-    final displayHour = hourOfPeriod(hour);
+    final displayHour = _hourOfPeriod(hour);
 
     return '$period $displayHour:$minute';
   }
 
-  int hourOfPeriod(int hour) {
-    if (hour == 0) return 12;
-    if (hour > 12) return hour - 12;
+  int _hourOfPeriod(int hour) {
+    if (hour == 0) {
+      return 12;
+    }
+
+    if (hour > 12) {
+      return hour - 12;
+    }
+
     return hour;
   }
 
+  // =========================================================
+  // 입국 / 출국 정보 전체 초기화
+  //
+  // 각 카드 우측 상단 X 버튼을 누르면
+  // 해당 카드의 공항과 시간을 한 번에 지웁니다.
+  // =========================================================
+
+  void _clearEntryInfo() {
+    setState(() {
+      entryAirport = null;
+      entryTime = null;
+    });
+  }
+
+  void _clearExitInfo() {
+    setState(() {
+      exitAirport = null;
+      exitTime = null;
+    });
+  }
+
+  // =========================================================
+  // 페이지 이동
+  // =========================================================
+
   void _goNext() {
-    context.go(AppRoutes.tripRegion);
+    context.go(
+      AppRoutes.tripRegion,
+    );
   }
 
   void _goPrevious() {
-    context.go(AppRoutes.tripPeriod);
+    context.go(
+      AppRoutes.tripPeriod,
+    );
   }
+
+  // =========================================================
+  // 화면 구성
+  // =========================================================
 
   @override
   Widget build(BuildContext context) {
@@ -143,42 +251,72 @@ class _TripEntryExitPageState extends State<TripEntryExitPage> {
       body: SafeArea(
         child: Column(
           children: [
-            const TripStepHeader(currentStep: 2),
-            const Padding(
-              padding: EdgeInsets.fromLTRB(22, 12, 22, 0),
-              child: TripStepIndicator(currentStep: 2),
+            const TripStepHeader(
+              currentStep: 2,
             ),
+
+            const Padding(
+              padding: EdgeInsets.fromLTRB(
+                22,
+                12,
+                22,
+                0,
+              ),
+              child: TripStepIndicator(
+                currentStep: 2,
+              ),
+            ),
+
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(22, 24, 22, 24),
+                padding: const EdgeInsets.fromLTRB(
+                  22,
+                  24,
+                  22,
+                  24,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       '입출국 정보를 입력해주세요',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineSmall
+                          ?.copyWith(
                         fontWeight: FontWeight.w900,
                       ),
                     ),
-                    const SizedBox(height: 8),
+
+                    const SizedBox(
+                      height: 8,
+                    ),
+
                     Text(
-                      '입국 도시와 출국 도시를 입력하면 더 정확한 여행 일정을 만들 수 있어요.',
+                      '입국 공항과 출국 공항을 입력하면 더 정확한 여행 일정을 만들 수 있어요.',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
-                    const SizedBox(height: 22),
+
+                    const SizedBox(
+                      height: 22,
+                    ),
+
+                    // =================================================
+                    // 입국 정보
+                    // =================================================
 
                     _EntryExitCard(
                       title: '입국 정보',
-                      cityLabel: '입국 도시',
-                      cityValue: entryCity,
+                      airportLabel: '입국 공항',
+                      airportValue: entryAirport,
                       timeLabel: '입국 예정 시간',
                       timeValue: _formatTime(entryTime),
-                      onCityTap: () {
-                        _selectCity(
-                          title: '입국 도시 선택',
-                          onSelected: (city) {
+                      onAirportTap: () {
+                        _selectAirport(
+                          title: '입국 공항 선택',
+                          onSelected: (airport) {
                             setState(() {
-                              entryCity = city;
+                              entryAirport = airport;
                             });
                           },
                         );
@@ -193,22 +331,35 @@ class _TripEntryExitPageState extends State<TripEntryExitPage> {
                           },
                         );
                       },
+
+                      // 공항이나 시간 중 하나라도 입력되어 있으면
+                      // 카드 우측 상단 X 버튼 표시
+                      onClear:
+                      entryAirport != null || entryTime != null
+                          ? _clearEntryInfo
+                          : null,
                     ),
 
-                    const SizedBox(height: 18),
+                    const SizedBox(
+                      height: 18,
+                    ),
+
+                    // =================================================
+                    // 출국 정보
+                    // =================================================
 
                     _EntryExitCard(
                       title: '출국 정보',
-                      cityLabel: '출국 도시',
-                      cityValue: exitCity,
+                      airportLabel: '출국 공항',
+                      airportValue: exitAirport,
                       timeLabel: '출국 예정 시간',
                       timeValue: _formatTime(exitTime),
-                      onCityTap: () {
-                        _selectCity(
-                          title: '출국 도시 선택',
-                          onSelected: (city) {
+                      onAirportTap: () {
+                        _selectAirport(
+                          title: '출국 공항 선택',
+                          onSelected: (airport) {
                             setState(() {
-                              exitCity = city;
+                              exitAirport = airport;
                             });
                           },
                         );
@@ -223,9 +374,22 @@ class _TripEntryExitPageState extends State<TripEntryExitPage> {
                           },
                         );
                       },
+
+                      // 공항이나 시간 중 하나라도 입력되어 있으면
+                      // 카드 우측 상단 X 버튼 표시
+                      onClear:
+                      exitAirport != null || exitTime != null
+                          ? _clearExitInfo
+                          : null,
                     ),
 
-                    const SizedBox(height: 22),
+                    const SizedBox(
+                      height: 22,
+                    ),
+
+                    // =================================================
+                    // 입출국 정보 안내
+                    // =================================================
 
                     Container(
                       width: double.infinity,
@@ -233,7 +397,9 @@ class _TripEntryExitPageState extends State<TripEntryExitPage> {
                       decoration: BoxDecoration(
                         color: const Color(0xFFEFF6FF),
                         borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: const Color(0xFFBFDBFE)),
+                        border: Border.all(
+                          color: const Color(0xFFBFDBFE),
+                        ),
                       ),
                       child: const Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -243,10 +409,12 @@ class _TripEntryExitPageState extends State<TripEntryExitPage> {
                             color: AppColors.primary,
                             size: 22,
                           ),
-                          SizedBox(width: 10),
+                          SizedBox(
+                            width: 10,
+                          ),
                           Expanded(
                             child: Text(
-                              '입출국 정보를 입력하지 않으면 추후 입력 시 일정이 변동될 수 있습니다.',
+                              '입출국 공항 정보를 입력하지 않으면 추후 입력 시 일정이 변동될 수 있습니다.',
                               style: TextStyle(
                                 color: AppColors.textPrimary,
                                 height: 1.45,
@@ -261,6 +429,7 @@ class _TripEntryExitPageState extends State<TripEntryExitPage> {
                 ),
               ),
             ),
+
             TripBottomNavigation(
               onPrevious: _goPrevious,
               onNext: _goNext,
@@ -272,23 +441,36 @@ class _TripEntryExitPageState extends State<TripEntryExitPage> {
   }
 }
 
+// ===========================================================
+// 입국 / 출국 정보 카드
+//
+// 카드 우측 상단의 X 버튼으로
+// 공항과 시간을 한 번에 초기화합니다.
+// ===========================================================
+
 class _EntryExitCard extends StatelessWidget {
   final String title;
-  final String cityLabel;
-  final String? cityValue;
+
+  final String airportLabel;
+  final String? airportValue;
+
   final String timeLabel;
   final String timeValue;
-  final VoidCallback onCityTap;
+
+  final VoidCallback onAirportTap;
   final VoidCallback onTimeTap;
+
+  final VoidCallback? onClear;
 
   const _EntryExitCard({
     required this.title,
-    required this.cityLabel,
-    required this.cityValue,
+    required this.airportLabel,
+    required this.airportValue,
     required this.timeLabel,
     required this.timeValue,
-    required this.onCityTap,
+    required this.onAirportTap,
     required this.onTimeTap,
+    required this.onClear,
   });
 
   @override
@@ -299,33 +481,72 @@ class _EntryExitCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(
+          color: AppColors.border,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(
+              alpha: 0.04,
+            ),
             blurRadius: 18,
-            offset: const Offset(0, 8),
+            offset: const Offset(
+              0,
+              8,
+            ),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w900,
-            ),
+          // 카드 제목 + 전체 초기화 버튼
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+
+              if (onClear != null)
+                IconButton(
+                  tooltip: '입력 내용 지우기',
+                  onPressed: onClear,
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    color: AppColors.textSecondary,
+                    size: 21,
+                  ),
+                  visualDensity: VisualDensity.compact,
+                ),
+            ],
           ),
-          const SizedBox(height: 16),
+
+          const SizedBox(
+            height: 12,
+          ),
+
+          // 공항 선택
           _SelectField(
-            label: cityLabel,
-            value: cityValue ?? '도시 선택',
-            icon: Icons.location_city_rounded,
-            isPlaceholder: cityValue == null,
-            onTap: onCityTap,
+            label: airportLabel,
+            value: airportValue ?? '공항 선택',
+            icon: Icons.local_airport_rounded,
+            isPlaceholder: airportValue == null,
+            onTap: onAirportTap,
           ),
-          const SizedBox(height: 12),
+
+          const SizedBox(
+            height: 12,
+          ),
+
+          // 시간 선택
           _SelectField(
             label: timeLabel,
             value: timeValue,
@@ -339,10 +560,15 @@ class _EntryExitCard extends StatelessWidget {
   }
 }
 
+// ===========================================================
+// 공항 / 시간 선택용 공통 필드
+// ===========================================================
+
 class _SelectField extends StatelessWidget {
   final String label;
   final String value;
   final IconData icon;
+
   final bool isPlaceholder;
   final VoidCallback onTap;
 
@@ -364,15 +590,28 @@ class _SelectField extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 14,
+          ),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(
+              color: AppColors.border,
+            ),
           ),
           child: Row(
             children: [
-              Icon(icon, color: AppColors.primary, size: 22),
-              const SizedBox(width: 12),
+              Icon(
+                icon,
+                color: AppColors.primary,
+                size: 22,
+              ),
+
+              const SizedBox(
+                width: 12,
+              ),
+
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -385,7 +624,11 @@ class _SelectField extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: 4),
+
+                    const SizedBox(
+                      height: 4,
+                    ),
+
                     Text(
                       value,
                       style: TextStyle(
@@ -399,6 +642,7 @@ class _SelectField extends StatelessWidget {
                   ],
                 ),
               ),
+
               const Icon(
                 Icons.keyboard_arrow_down_rounded,
                 color: AppColors.textSecondary,
@@ -411,28 +655,33 @@ class _SelectField extends StatelessWidget {
   }
 }
 
-class _CitySearchBottomSheet extends StatefulWidget {
-  final String title;
-  final List<String> cities;
+// ===========================================================
+// 국제공항 선택 BottomSheet
+//
+// 검색어가 없으면 9개 권역별로 공항을 보여주고,
+// 검색어를 입력하면 해당 공항만 필터링합니다.
+// ===========================================================
 
-  const _CitySearchBottomSheet({
+class _AirportSearchBottomSheet extends StatefulWidget {
+  final String title;
+  final List<_AirportGroup> airportGroups;
+
+  const _AirportSearchBottomSheet({
     required this.title,
-    required this.cities,
+    required this.airportGroups,
   });
 
   @override
-  State<_CitySearchBottomSheet> createState() => _CitySearchBottomSheetState();
+  State<_AirportSearchBottomSheet> createState() =>
+      _AirportSearchBottomSheetState();
 }
 
-class _CitySearchBottomSheetState extends State<_CitySearchBottomSheet> {
-  final TextEditingController controller = TextEditingController();
-  late List<String> filteredCities;
+class _AirportSearchBottomSheetState
+    extends State<_AirportSearchBottomSheet> {
+  final TextEditingController controller =
+  TextEditingController();
 
-  @override
-  void initState() {
-    super.initState();
-    filteredCities = widget.cities;
-  }
+  String keyword = '';
 
   @override
   void dispose() {
@@ -440,25 +689,73 @@ class _CitySearchBottomSheetState extends State<_CitySearchBottomSheet> {
     super.dispose();
   }
 
-  void _filter(String keyword) {
-    setState(() {
-      filteredCities = widget.cities
-          .where((city) => city.contains(keyword.trim()))
+  // =========================================================
+  // 검색 결과 생성
+  //
+  // 공항명뿐 아니라 권역명으로도 검색할 수 있습니다.
+  // 예: "홋카이도" 검색 → 홋카이도의 모든 공항 표시
+  // =========================================================
+
+  List<_AirportGroup> get filteredGroups {
+    final query = keyword.trim().toLowerCase();
+
+    if (query.isEmpty) {
+      return widget.airportGroups;
+    }
+
+    final results = <_AirportGroup>[];
+
+    for (final group in widget.airportGroups) {
+      final groupMatches =
+      group.name.toLowerCase().contains(query);
+
+      final matchedAirports = groupMatches
+          ? group.airports
+          : group.airports
+          .where(
+            (airport) =>
+            airport.toLowerCase().contains(query),
+      )
           .toList();
+
+      if (matchedAirports.isNotEmpty) {
+        results.add(
+          _AirportGroup(
+            name: group.name,
+            airports: matchedAirports,
+          ),
+        );
+      }
+    }
+
+    return results;
+  }
+
+  void _filter(String value) {
+    setState(() {
+      keyword = value;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
+    final bottomPadding =
+        MediaQuery.of(context).viewInsets.bottom;
+
+    final groups = filteredGroups;
 
     return Padding(
-      padding: EdgeInsets.only(bottom: bottomPadding),
+      padding: EdgeInsets.only(
+        bottom: bottomPadding,
+      ),
       child: SizedBox(
-        height: MediaQuery.of(context).size.height * 0.78,
+        height: MediaQuery.of(context).size.height * 0.82,
         child: Column(
           children: [
-            const SizedBox(height: 12),
+            const SizedBox(
+              height: 12,
+            ),
+
             Container(
               width: 42,
               height: 5,
@@ -467,67 +764,112 @@ class _CitySearchBottomSheetState extends State<_CitySearchBottomSheet> {
                 borderRadius: BorderRadius.circular(999),
               ),
             ),
+
             Padding(
-              padding: const EdgeInsets.fromLTRB(22, 20, 22, 12),
+              padding: const EdgeInsets.fromLTRB(
+                22,
+                20,
+                22,
+                12,
+              ),
               child: Row(
                 children: [
                   Expanded(
                     child: Text(
                       widget.title,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleLarge
+                          ?.copyWith(
                         fontWeight: FontWeight.w900,
                       ),
                     ),
                   ),
+
                   IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    icon: const Icon(
+                      Icons.close_rounded,
+                    ),
                   ),
                 ],
               ),
             ),
+
+            // =================================================
+            // 공항 검색
+            // =================================================
+
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 22),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 22,
+              ),
               child: TextField(
                 controller: controller,
                 onChanged: _filter,
                 decoration: InputDecoration(
-                  hintText: '도시 검색',
-                  prefixIcon: const Icon(Icons.search_rounded),
+                  hintText: '공항 또는 지역 검색',
+                  prefixIcon: const Icon(
+                    Icons.search_rounded,
+                  ),
                   filled: true,
                   fillColor: AppColors.background,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(color: AppColors.border),
+                    borderSide: const BorderSide(
+                      color: AppColors.border,
+                    ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(color: AppColors.border),
+                    borderSide: const BorderSide(
+                      color: AppColors.border,
+                    ),
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 18),
-                itemCount: filteredCities.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
-                itemBuilder: (context, index) {
-                  final city = filteredCities[index];
 
-                  return ListTile(
-                    title: Text(
-                      city,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    trailing: const Icon(
-                      Icons.chevron_right_rounded,
-                      color: AppColors.textSecondary,
-                    ),
-                    onTap: () => Navigator.pop(context, city),
+            const SizedBox(
+              height: 12,
+            ),
+
+            // =================================================
+            // 9개 권역별 공항 목록
+            // =================================================
+
+            Expanded(
+              child: groups.isEmpty
+                  ? const Center(
+                child: Text(
+                  '검색 결과가 없습니다.',
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              )
+                  : ListView.builder(
+                padding: const EdgeInsets.fromLTRB(
+                  12,
+                  0,
+                  12,
+                  18,
+                ),
+                itemCount: groups.length,
+                itemBuilder: (context, groupIndex) {
+                  final group = groups[groupIndex];
+
+                  return _AirportGroupSection(
+                    group: group,
+                    onSelected: (airport) {
+                      Navigator.pop(
+                        context,
+                        airport,
+                      );
+                    },
                   );
                 },
               ),
@@ -537,4 +879,123 @@ class _CitySearchBottomSheetState extends State<_CitySearchBottomSheet> {
       ),
     );
   }
+}
+
+// ===========================================================
+// 권역별 공항 목록
+// ===========================================================
+
+class _AirportGroupSection extends StatelessWidget {
+  final _AirportGroup group;
+  final ValueChanged<String> onSelected;
+
+  const _AirportGroupSection({
+    required this.group,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(
+        bottom: 14,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 권역명
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              10,
+              10,
+              10,
+              6,
+            ),
+            child: Row(
+              children: [
+                Text(
+                  group.name,
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+
+                const SizedBox(
+                  width: 6,
+                ),
+
+                Text(
+                  '${group.airports.length}개',
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // 해당 권역 공항 목록
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppColors.border,
+              ),
+            ),
+            child: Column(
+              children: [
+                for (int i = 0; i < group.airports.length; i++) ...[
+                  ListTile(
+                    leading: const Icon(
+                      Icons.local_airport_rounded,
+                      color: AppColors.primary,
+                    ),
+                    title: Text(
+                      group.airports[i],
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    trailing: const Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppColors.textSecondary,
+                    ),
+                    onTap: () {
+                      onSelected(
+                        group.airports[i],
+                      );
+                    },
+                  ),
+
+                  if (i < group.airports.length - 1)
+                    const Divider(
+                      height: 1,
+                    ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ===========================================================
+// 공항 권역 데이터 모델
+// ===========================================================
+
+class _AirportGroup {
+  final String name;
+  final List<String> airports;
+
+  const _AirportGroup({
+    required this.name,
+    required this.airports,
+  });
 }
