@@ -19,23 +19,31 @@ class TripTransportPage extends StatefulWidget {
 
 class _TripTransportPageState
     extends State<TripTransportPage> {
+  // =========================================================
+  // 선택된 주요 이동수단
+  //
+  // 현재는 한 가지 이동수단만 선택할 수 있습니다.
+  // 선택한 항목을 다시 누르면 선택을 해제할 수 있습니다.
+  // =========================================================
+
   String? selectedTransport;
 
   // =========================================================
   // 이동수단 목록
+  //
+  // 1. 도보 및 대중교통
+  // 2. 차량 렌트
   // =========================================================
 
   final List<_TransportItem> transports = const [
     _TransportItem(
       name: '도보 및 대중교통',
-      description:
-      '지하철, 버스, 도보를 중심으로 효율적인 동선을 추천합니다.',
+      description: '전철, 버스와 도보를 중심으로 이동합니다.',
       icon: Icons.directions_transit_rounded,
     ),
     _TransportItem(
       name: '차량 렌트',
-      description:
-      '렌터카 이동을 고려해 주차와 이동 거리를 반영합니다.',
+      description: '렌터카를 이용한 이동을 중심으로 일정을 구성합니다.',
       icon: Icons.directions_car_filled_rounded,
     ),
   ];
@@ -43,14 +51,8 @@ class _TripTransportPageState
   // =========================================================
   // 이동수단 선택 / 선택 해제
   //
-  // 선택되지 않은 항목 클릭
-  // → 해당 이동수단 선택
-  //
-  // 이미 선택된 항목 다시 클릭
-  // → 선택 해제
-  //
-  // 다른 항목 클릭
-  // → 기존 선택 대신 새 이동수단 선택
+  // 이미 선택된 이동수단을 다시 누르면 선택을 해제합니다.
+  // 다른 이동수단을 누르면 선택 항목이 변경됩니다.
   // =========================================================
 
   void _toggleTransport(
@@ -66,8 +68,28 @@ class _TripTransportPageState
   }
 
   // =========================================================
-  // AI 일정 생성 단계로 이동
-  // 이동수단은 반드시 하나 선택해야 합니다.
+  // 이전 단계
+  //
+  // 8단계 이동수단 → 7단계 여행 테마
+  // =========================================================
+
+  void _goPrevious() {
+    context.go(
+      AppRoutes.tripTheme,
+    );
+  }
+
+  // =========================================================
+  // 다음 단계
+  //
+  // 이동수단을 하나 선택한 경우에만
+  // 9단계 일정 설정 화면으로 이동합니다.
+  //
+  // 기존:
+  // 이동수단 → 로딩
+  //
+  // 변경:
+  // 이동수단 → 일정 설정 → 로딩
   // =========================================================
 
   void _goNext() {
@@ -84,7 +106,7 @@ class _TripTransportPageState
     }
 
     context.go(
-      AppRoutes.loading,
+      AppRoutes.tripScheduleSettings,
     );
   }
 
@@ -97,19 +119,21 @@ class _TripTransportPageState
       BuildContext context,
       ) {
     return Scaffold(
-      backgroundColor:
-      AppColors.background,
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
+            // =================================================
+            // 8단계 상단 헤더
+            // =================================================
+
             const TripStepHeader(
               currentStep: 8,
             ),
 
             Expanded(
               child: SingleChildScrollView(
-                padding:
-                const EdgeInsets.fromLTRB(
+                padding: const EdgeInsets.fromLTRB(
                   22,
                   20,
                   22,
@@ -128,9 +152,8 @@ class _TripTransportPageState
                     ),
 
                     Text(
-                      '어떻게 이동할\n예정인가요?',
-                      style:
-                      Theme.of(context)
+                      '주로 어떻게\n이동하시나요?',
+                      style: Theme.of(context)
                           .textTheme
                           .headlineMedium
                           ?.copyWith(
@@ -145,20 +168,19 @@ class _TripTransportPageState
                     ),
 
                     Text(
-                      '주요 이동수단에 따라 이동 시간, 동선, 휴식 시간을 다르게 계산합니다.',
-                      style:
-                      Theme.of(context)
+                      '여행 중 주로 이용할 이동수단을 선택하면 이동 방식에 맞춰 일정을 구성합니다.',
+                      style: Theme.of(context)
                           .textTheme
                           .bodyLarge
                           ?.copyWith(
-                        color: AppColors
-                            .textSecondary,
+                        color:
+                        AppColors.textSecondary,
                         height: 1.45,
                       ),
                     ),
 
                     const SizedBox(
-                      height: 32,
+                      height: 28,
                     ),
 
                     // =================================================
@@ -171,14 +193,22 @@ class _TripTransportPageState
                             selectedTransport ==
                                 transport.name;
 
-                        return _TransportCard(
-                          transport: transport,
-                          selected: selected,
-                          onTap: () {
-                            _toggleTransport(
-                              transport.name,
-                            );
-                          },
+                        return Padding(
+                          padding:
+                          const EdgeInsets.only(
+                            bottom: 14,
+                          ),
+                          child: _TransportCard(
+                            transport:
+                            transport,
+                            selected:
+                            selected,
+                            onTap: () {
+                              _toggleTransport(
+                                transport.name,
+                              );
+                            },
+                          ),
                         );
                       },
                     ),
@@ -188,82 +218,78 @@ class _TripTransportPageState
                     ),
 
                     // =================================================
-                    // 차량 렌트 안내
+                    // 선택된 이동수단 안내
                     // =================================================
 
-                    Container(
-                      width: double.infinity,
-                      padding:
-                      const EdgeInsets.all(
-                        16,
-                      ),
-                      decoration: BoxDecoration(
-                        color:
-                        AppColors.primary
-                            .withValues(
-                          alpha: 0.08,
+                    if (selectedTransport != null)
+                      Container(
+                        width:
+                        double.infinity,
+                        padding:
+                        const EdgeInsets.all(
+                          14,
                         ),
-                        borderRadius:
-                        BorderRadius.circular(
-                          18,
+                        decoration:
+                        BoxDecoration(
+                          color:
+                          AppColors.primary
+                              .withValues(
+                            alpha: 0.08,
+                          ),
+                          borderRadius:
+                          BorderRadius.circular(
+                            16,
+                          ),
                         ),
-                      ),
-                      child: Row(
-                        crossAxisAlignment:
-                        CrossAxisAlignment.start,
-                        children: [
-                          const Icon(
-                            Icons
-                                .info_outline_rounded,
-                            color:
-                            AppColors.primary,
-                            size: 22,
-                          ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons
+                                  .check_circle_rounded,
+                              color:
+                              AppColors.primary,
+                              size: 21,
+                            ),
 
-                          const SizedBox(
-                            width: 10,
-                          ),
+                            const SizedBox(
+                              width: 8,
+                            ),
 
-                          Expanded(
-                            child: Text(
-                              '차량 렌트를 선택한 경우 국제운전면허증 준비 여부를 반드시 확인하세요.',
-                              style:
-                              Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                color:
-                                AppColors
-                                    .primary,
-                                fontWeight:
-                                FontWeight
-                                    .w700,
-                                height:
-                                1.4,
+                            Expanded(
+                              child: Text(
+                                '선택한 이동수단: $selectedTransport',
+                                style:
+                                const TextStyle(
+                                  color:
+                                  AppColors.primary,
+                                  fontWeight:
+                                  FontWeight.w800,
+                                  height: 1.4,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
             ),
 
-            // =========================================================
-            // 이전 / AI 일정 생성
-            // =========================================================
+            // =================================================
+            // 이전 → 여행 테마
+            // 다음 → 일정 설정
+            //
+            // AI 일정 생성 버튼은 다음 9단계로 이동했습니다.
+            // =================================================
 
             TripBottomNavigation(
-              onPrevious: () {
-                context.go(
-                  AppRoutes.tripTheme,
-                );
-              },
-              onNext: _goNext,
+              onPrevious:
+              _goPrevious,
+              onNext:
+              _goNext,
               nextText:
-              'AI 일정 생성하기',
+              '다음',
             ),
           ],
         ),
@@ -274,6 +300,9 @@ class _TripTransportPageState
 
 // ===========================================================
 // 이동수단 선택 카드
+//
+// 선택 상태에 따라
+// 테두리, 아이콘, 체크 아이콘의 색상이 변경됩니다.
 // ===========================================================
 
 class _TransportCard
@@ -297,179 +326,172 @@ class _TransportCard
         ? AppColors.primary
         : AppColors.textSecondary;
 
-    return Container(
-      margin:
-      const EdgeInsets.only(
-        bottom: 16,
+    return Material(
+      color: Colors.white,
+      borderRadius:
+      BorderRadius.circular(
+        22,
       ),
-      child: Material(
-        color: Colors.white,
+      child: InkWell(
+        onTap: onTap,
         borderRadius:
         BorderRadius.circular(
-          24,
+          22,
         ),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius:
-          BorderRadius.circular(
-            24,
+        child: Container(
+          width:
+          double.infinity,
+          padding:
+          const EdgeInsets.all(
+            18,
           ),
-          child: Container(
-            padding:
-            const EdgeInsets.all(
-              20,
+          decoration:
+          BoxDecoration(
+            borderRadius:
+            BorderRadius.circular(
+              22,
             ),
-            decoration:
-            BoxDecoration(
-              borderRadius:
-              BorderRadius.circular(
-                24,
-              ),
-              border: Border.all(
-                color:
-                selected
+            border:
+            Border.all(
+              color: selected
+                  ? AppColors.primary
+                  : AppColors.border,
+              width:
+              selected ? 2 : 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: selected
                     ? AppColors.primary
-                    : AppColors.border,
-                width:
-                selected ? 2 : 1,
+                    .withValues(
+                  alpha: 0.12,
+                )
+                    : Colors.black
+                    .withValues(
+                  alpha: 0.04,
+                ),
+                blurRadius:
+                18,
+                offset:
+                const Offset(
+                  0,
+                  8,
+                ),
               ),
-              boxShadow: [
-                BoxShadow(
+            ],
+          ),
+          child: Row(
+            children: [
+              // =============================================
+              // 이동수단 아이콘
+              // =============================================
+
+              Container(
+                width:
+                58,
+                height:
+                58,
+                decoration:
+                BoxDecoration(
                   color:
-                  selected
-                      ? AppColors.primary
-                      .withValues(
-                    alpha: 0.12,
-                  )
-                      : Colors.black
-                      .withValues(
-                    alpha: 0.04,
+                  color.withValues(
+                    alpha: 0.1,
                   ),
-                  blurRadius: 18,
-                  offset:
-                  const Offset(
-                    0,
-                    8,
+                  borderRadius:
+                  BorderRadius.circular(
+                    18,
                   ),
                 ),
-              ],
-            ),
-            child: Row(
-              children: [
-                // =============================================
-                // 이동수단 아이콘
-                // =============================================
-
-                Container(
-                  width: 66,
-                  height: 66,
-                  decoration:
-                  BoxDecoration(
-                    color:
-                    color.withValues(
-                      alpha: 0.1,
-                    ),
-                    borderRadius:
-                    BorderRadius.circular(
-                      22,
-                    ),
-                  ),
-                  child: Icon(
-                    transport.icon,
-                    color: color,
-                    size: 38,
-                  ),
+                child:
+                Icon(
+                  transport.icon,
+                  color:
+                  color,
+                  size:
+                  31,
                 ),
+              ),
 
-                const SizedBox(
-                  width: 18,
-                ),
+              const SizedBox(
+                width:
+                16,
+              ),
 
-                // =============================================
-                // 이동수단 이름 / 설명
-                // =============================================
+              // =============================================
+              // 이동수단 이름 / 설명
+              // =============================================
 
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment:
-                    CrossAxisAlignment
-                        .start,
-                    children: [
-                      Text(
-                        transport.name,
-                        style:
-                        Theme.of(context)
-                            .textTheme
-                            .titleLarge
-                            ?.copyWith(
-                          fontWeight:
-                          FontWeight
-                              .w900,
-                          color:
-                          selected
-                              ? AppColors
-                              .primary
-                              : AppColors
-                              .textPrimary,
-                        ),
+              Expanded(
+                child:
+                Column(
+                  crossAxisAlignment:
+                  CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      transport.name,
+                      style:
+                      Theme.of(context)
+                          .textTheme
+                          .bodyLarge
+                          ?.copyWith(
+                        color: selected
+                            ? AppColors.primary
+                            : AppColors.textPrimary,
+                        fontWeight:
+                        FontWeight.w900,
                       ),
-
-                      const SizedBox(
-                        height: 8,
-                      ),
-
-                      Text(
-                        transport.description,
-                        style:
-                        Theme.of(context)
-                            .textTheme
-                            .bodyMedium
-                            ?.copyWith(
-                          height: 1.4,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(
-                  width: 10,
-                ),
-
-                // =============================================
-                // 선택 상태 표시
-                // =============================================
-
-                if (selected)
-                  Container(
-                    width: 30,
-                    height: 30,
-                    decoration:
-                    const BoxDecoration(
-                      color:
-                      AppColors.primary,
-                      shape:
-                      BoxShape.circle,
                     ),
-                    child:
-                    const Icon(
-                      Icons
-                          .check_rounded,
-                      color:
-                      Colors.white,
-                      size: 20,
+
+                    const SizedBox(
+                      height:
+                      6,
                     ),
-                  )
-                else
-                  const Icon(
-                    Icons
-                        .chevron_right_rounded,
-                    color:
-                    AppColors
-                        .textSecondary,
-                  ),
-              ],
-            ),
+
+                    Text(
+                      transport.description,
+                      style:
+                      Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(
+                        color:
+                        AppColors.textSecondary,
+                        height:
+                        1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(
+                width:
+                12,
+              ),
+
+              // =============================================
+              // 선택 상태
+              // =============================================
+
+              if (selected)
+                const Icon(
+                  Icons
+                      .check_circle_rounded,
+                  color:
+                  AppColors.primary,
+                  size:
+                  28,
+                )
+              else
+                const Icon(
+                  Icons
+                      .radio_button_unchecked_rounded,
+                  color:
+                  AppColors.textSecondary,
+                  size:
+                  28,
+                ),
+            ],
           ),
         ),
       ),

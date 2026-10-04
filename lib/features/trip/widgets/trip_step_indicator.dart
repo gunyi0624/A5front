@@ -9,28 +9,41 @@ class TripStepIndicator extends StatelessWidget {
   const TripStepIndicator({
     super.key,
     required this.currentStep,
-    this.totalStep = 8,
+    this.totalStep = 9,
   });
 
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: List.generate(totalStep, (index) {
-        final selected = index < currentStep;
+      children: List.generate(
+        totalStep,
+            (index) {
+          final selected =
+              index < currentStep;
 
-        return Expanded(
-          child: Container(
-            height: 6,
-            margin: EdgeInsets.only(
-              right: index == totalStep - 1 ? 0 : 6,
+          return Expanded(
+            child: Container(
+              height: 6,
+              margin: EdgeInsets.only(
+                right:
+                index == totalStep - 1
+                    ? 0
+                    : 6,
+              ),
+              decoration: BoxDecoration(
+                color:
+                selected
+                    ? AppColors.primary
+                    : AppColors.border,
+                borderRadius:
+                BorderRadius.circular(
+                  999,
+                ),
+              ),
             ),
-            decoration: BoxDecoration(
-              color: selected ? AppColors.primary : AppColors.border,
-              borderRadius: BorderRadius.circular(999),
-            ),
-          ),
-        );
-      }),
+          );
+        },
+      ),
     );
   }
 }

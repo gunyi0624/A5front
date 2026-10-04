@@ -9,7 +9,8 @@ import '../widgets/trip_step_header.dart';
 import '../widgets/trip_step_indicator.dart';
 
 class TripAccommodationPage extends StatefulWidget {
-  /// 추후 여행 기간 화면에서 전달할 날짜 범위입니다.
+  /// 추후 Riverpod으로 여행 기간과 연결하기 전까지
+  /// 외부에서 날짜 범위를 넘길 수 있도록 유지합니다.
   final DateTimeRange? travelPeriod;
 
   const TripAccommodationPage({
@@ -24,6 +25,12 @@ class TripAccommodationPage extends StatefulWidget {
 
 class _TripAccommodationPageState
     extends State<TripAccommodationPage> {
+  // =========================================================
+  // 등록된 숙소 목록
+  //
+  // 숙소는 선택 사항이며 여러 개 등록할 수 있습니다.
+  // =========================================================
+
   final List<_AccommodationEntry> _accommodations = [];
 
   late final DateTime _defaultFirstDate;
@@ -33,43 +40,52 @@ class _TripAccommodationPageState
   void initState() {
     super.initState();
 
+    // 여행 기간 정보가 아직 연결되지 않은 경우를 대비해
+    // 오늘부터 최대 2년 뒤까지 선택할 수 있도록 기본 범위를 설정합니다.
     _defaultFirstDate =
-        DateUtils.dateOnly(
-          DateTime.now(),
-        );
+        DateUtils.dateOnly(DateTime.now());
 
-    _defaultLastDate =
-        DateTime(
-          _defaultFirstDate.year + 2,
-        );
+    _defaultLastDate = DateTime(
+      _defaultFirstDate.year + 2,
+      _defaultFirstDate.month,
+      _defaultFirstDate.day,
+    );
   }
+
+  // =========================================================
+  // 숙박 시작일 / 종료일 선택
+  //
+  // 종료일은 시작일보다 앞설 수 없고,
+  // 시작일 역시 선택된 종료일보다 뒤로 갈 수 없습니다.
+  // =========================================================
 
   Future<void> _pickDate(
       _AccommodationEntry entry, {
         required bool isStart,
       }) async {
-    final firstDate =
-    DateUtils.dateOnly(
+    final firstDate = DateUtils.dateOnly(
       widget.travelPeriod?.start ??
           _defaultFirstDate,
     );
 
-    final lastDate =
-    DateUtils.dateOnly(
+    final lastDate = DateUtils.dateOnly(
       widget.travelPeriod?.end ??
           _defaultLastDate,
     );
 
+    // 시작일 선택 시:
+    // 여행 시작일 ~ 현재 선택된 종료일
+    //
+    // 종료일 선택 시:
+    // 현재 선택된 시작일 ~ 여행 종료일
     final lowerBound =
     isStart
         ? firstDate
-        : entry.startDate ??
-        firstDate;
+        : entry.startDate ?? firstDate;
 
     final upperBound =
     isStart
-        ? entry.endDate ??
-        lastDate
+        ? entry.endDate ?? lastDate
         : lastDate;
 
     final initialDate =
@@ -78,8 +94,7 @@ class _TripAccommodationPageState
             : entry.endDate) ??
             lowerBound;
 
-    final picked =
-    await showDatePicker(
+    final picked = await showDatePicker(
       context: context,
       firstDate: lowerBound,
       lastDate: upperBound,
@@ -90,13 +105,9 @@ class _TripAccommodationPageState
           : '숙소 종료일 선택',
       cancelText: '취소',
       confirmText: '선택',
-      builder: (
-          context,
-          child,
-          ) {
+      builder: (context, child) {
         return Theme(
-          data:
-          Theme.of(context).copyWith(
+          data: Theme.of(context).copyWith(
             colorScheme:
             Theme.of(context)
                 .colorScheme
@@ -112,9 +123,7 @@ class _TripAccommodationPageState
 
     if (!mounted ||
         picked == null ||
-        !_accommodations.contains(
-          entry,
-        )) {
+        !_accommodations.contains(entry)) {
       return;
     }
 
@@ -127,6 +136,12 @@ class _TripAccommodationPageState
     });
   }
 
+  // =========================================================
+  // 숙소 추가
+  //
+  // 새 숙소 카드를 목록 마지막에 추가합니다.
+  // =========================================================
+
   void _addAccommodation() {
     setState(() {
       _accommodations.add(
@@ -135,40 +150,75 @@ class _TripAccommodationPageState
     });
   }
 
+  // =========================================================
+  // 숙소 삭제
+  //
+  // 삭제 후 화면 번호는 현재 List 순서에 따라
+  // 자동으로 다시 1, 2, 3... 형태로 표시됩니다.
+  // =========================================================
+
   void _removeAccommodation(
-      int index,
+      _AccommodationEntry entry,
       ) {
     setState(() {
-      _accommodations.removeAt(
-        index,
-      );
+      _accommodations.remove(entry);
     });
   }
 
+  // =========================================================
+  // 숙소명 / 주소 입력
+  //
+  // Google Places 검색은 사용하지 않고
+  // 사용자가 직접 입력한 문자열만 저장합니다.
+  // =========================================================
+
+  void _updatePlace(
+      _AccommodationEntry entry,
+      String value,
+      ) {
+    entry.place = value;
+  }
+
+  // =========================================================
+  // 페이지 이동
+  //
+  // 변경된 흐름:
+  //
+  // 3단계 입출국 정보
+  //      ↓
+  // 4단계 숙소
+  //      ↓
+  // 5단계 고정 일정
+  // =========================================================
+
   void _goPrevious() {
     context.go(
-      AppRoutes.tripRegion,
+      AppRoutes.tripEntryExit,
     );
   }
 
   void _goNext() {
-    FocusScope.of(context).unfocus();
-
     context.go(
       AppRoutes.tripFixedSchedule,
     );
   }
 
+  // =========================================================
+  // 화면 구성
+  // =========================================================
+
   @override
-  Widget build(
-      BuildContext context,
-      ) {
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor:
       AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
+            // =================================================
+            // 4단계 상단 헤더
+            // =================================================
+
             const TripStepHeader(
               currentStep: 4,
             ),
@@ -177,8 +227,7 @@ class _TripAccommodationPageState
               child:
               SingleChildScrollView(
                 padding:
-                const EdgeInsets
-                    .fromLTRB(
+                const EdgeInsets.fromLTRB(
                   22,
                   20,
                   22,
@@ -200,9 +249,7 @@ class _TripAccommodationPageState
                     Text(
                       '어디에서\n머무르시나요?',
                       style:
-                      Theme.of(
-                        context,
-                      )
+                      Theme.of(context)
                           .textTheme
                           .headlineMedium
                           ?.copyWith(
@@ -221,9 +268,7 @@ class _TripAccommodationPageState
                     Text(
                       '숙소는 선택 사항입니다. 정해진 숙소가 없다면 다음 단계로 이동해주세요.',
                       style:
-                      Theme.of(
-                        context,
-                      )
+                      Theme.of(context)
                           .textTheme
                           .bodyLarge
                           ?.copyWith(
@@ -238,6 +283,10 @@ class _TripAccommodationPageState
                     const SizedBox(
                       height: 28,
                     ),
+
+                    // =================================================
+                    // 등록된 숙소가 없는 경우
+                    // =================================================
 
                     if (_accommodations
                         .isEmpty)
@@ -257,13 +306,15 @@ class _TripAccommodationPageState
                         ),
                       ),
 
-                    for (
-                    var index = 0;
+                    // =================================================
+                    // 등록된 숙소 카드
+                    // =================================================
+
+                    for (var index = 0;
                     index <
                         _accommodations
                             .length;
-                    index++
-                    )
+                    index++)
                       _AccommodationCard(
                         key: ObjectKey(
                           _accommodations[
@@ -274,30 +325,39 @@ class _TripAccommodationPageState
                         entry:
                         _accommodations[
                         index],
-                        onStartDate: () =>
-                            _pickDate(
-                              _accommodations[
-                              index],
-                              isStart: true,
-                            ),
-                        onEndDate: () =>
-                            _pickDate(
-                              _accommodations[
-                              index],
-                              isStart: false,
-                            ),
+                        onStartDate: () {
+                          _pickDate(
+                            _accommodations[
+                            index],
+                            isStart: true,
+                          );
+                        },
+                        onEndDate: () {
+                          _pickDate(
+                            _accommodations[
+                            index],
+                            isStart: false,
+                          );
+                        },
                         onPlaceChanged:
                             (value) {
-                          _accommodations[
-                          index]
-                              .place =
-                              value;
+                          _updatePlace(
+                            _accommodations[
+                            index],
+                            value,
+                          );
                         },
-                        onDelete: () =>
-                            _removeAccommodation(
-                              index,
-                            ),
+                        onDelete: () {
+                          _removeAccommodation(
+                            _accommodations[
+                            index],
+                          );
+                        },
                       ),
+
+                    // =================================================
+                    // 숙소 추가 버튼
+                    // =================================================
 
                     SizedBox(
                       width:
@@ -315,6 +375,12 @@ class _TripAccommodationPageState
                         label:
                         const Text(
                           '숙소 추가',
+                          style:
+                          TextStyle(
+                            fontWeight:
+                            FontWeight
+                                .w800,
+                          ),
                         ),
                         style:
                         OutlinedButton
@@ -349,6 +415,11 @@ class _TripAccommodationPageState
               ),
             ),
 
+            // =================================================
+            // 이전 → 입출국 정보
+            // 다음 → 고정 일정
+            // =================================================
+
             TripBottomNavigation(
               onPrevious:
               _goPrevious,
@@ -362,12 +433,31 @@ class _TripAccommodationPageState
   }
 }
 
+// ===========================================================
+// 숙소 데이터
+//
+// Google Places 객체를 사용하지 않고
+// 직접 입력한 숙소명 또는 주소 문자열만 저장합니다.
+// ===========================================================
+
 class _AccommodationEntry {
   DateTime? startDate;
   DateTime? endDate;
 
   String place = '';
 }
+
+// ===========================================================
+// 숙소 카드
+//
+// 각 숙소마다 다음 정보를 입력합니다.
+//
+// - 숙박 시작일
+// - 숙박 종료일
+// - 숙소명 또는 주소
+//
+// 우측 상단 삭제 버튼으로 숙소를 삭제할 수 있습니다.
+// ===========================================================
 
 class _AccommodationCard
     extends StatelessWidget {
@@ -392,6 +482,16 @@ class _AccommodationCard
     required this.onDelete,
   });
 
+  // =========================================================
+  // 날짜 표시
+  //
+  // 선택 전:
+  // 날짜 선택
+  //
+  // 선택 후:
+  // 2026-10-03
+  // =========================================================
+
   String _dateText(
       DateTime? date,
       ) {
@@ -401,9 +501,7 @@ class _AccommodationCard
 
     return DateFormat(
       'yyyy-MM-dd',
-    ).format(
-      date,
-    );
+    ).format(date);
   }
 
   @override
@@ -411,8 +509,7 @@ class _AccommodationCard
       BuildContext context,
       ) {
     return Container(
-      width:
-      double.infinity,
+      width: double.infinity,
       margin:
       const EdgeInsets.only(
         bottom: 16,
@@ -421,17 +518,14 @@ class _AccommodationCard
       const EdgeInsets.all(
         20,
       ),
-      decoration:
-      BoxDecoration(
-        color:
-        AppColors.surface,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
         borderRadius:
         BorderRadius.circular(
           24,
         ),
         border: Border.all(
-          color:
-          AppColors.border,
+          color: AppColors.border,
         ),
         boxShadow: [
           BoxShadow(
@@ -440,8 +534,7 @@ class _AccommodationCard
                 .withValues(
               alpha: 0.04,
             ),
-            blurRadius:
-            18,
+            blurRadius: 18,
             offset:
             const Offset(
               0,
@@ -455,15 +548,17 @@ class _AccommodationCard
         CrossAxisAlignment
             .start,
         children: [
+          // =================================================
+          // 숙소 번호 + 삭제
+          // =================================================
+
           Row(
             children: [
               Expanded(
                 child: Text(
                   '숙소 $number',
                   style:
-                  Theme.of(
-                    context,
-                  )
+                  Theme.of(context)
                       .textTheme
                       .titleLarge
                       ?.copyWith(
@@ -490,7 +585,8 @@ class _AccommodationCard
                 TextButton
                     .styleFrom(
                   foregroundColor:
-                  AppColors.error,
+                  AppColors
+                      .error,
                 ),
               ),
             ],
@@ -499,6 +595,10 @@ class _AccommodationCard
           const SizedBox(
             height: 12,
           ),
+
+          // =================================================
+          // 숙박 기간
+          // =================================================
 
           const Text(
             '숙박 기간',
@@ -512,13 +612,16 @@ class _AccommodationCard
             height: 8,
           ),
 
-          _inputTile(
-            '시작일',
+          _AccommodationDateField(
+            label: '시작일',
+            value:
             _dateText(
               entry.startDate,
             ),
-            Icons
-                .calendar_today_rounded,
+            selected:
+            entry.startDate !=
+                null,
+            onTap:
             onStartDate,
           ),
 
@@ -526,19 +629,26 @@ class _AccommodationCard
             height: 10,
           ),
 
-          _inputTile(
-            '종료일',
+          _AccommodationDateField(
+            label: '종료일',
+            value:
             _dateText(
               entry.endDate,
             ),
-            Icons
-                .calendar_today_rounded,
+            selected:
+            entry.endDate !=
+                null,
+            onTap:
             onEndDate,
           ),
 
           const SizedBox(
             height: 20,
           ),
+
+          // =================================================
+          // 숙소명 / 주소 직접 입력
+          // =================================================
 
           const Text(
             '숙소 장소',
@@ -552,72 +662,116 @@ class _AccommodationCard
             height: 8,
           ),
 
-          _placeTextField(),
+          TextFormField(
+            key: ValueKey(
+              'accommodation_place_$number',
+            ),
+            initialValue:
+            entry.place,
+            onChanged:
+            onPlaceChanged,
+            textInputAction:
+            TextInputAction.done,
+            maxLength: 100,
+            decoration:
+            InputDecoration(
+              counterText: '',
+              hintText:
+              '숙소명 또는 주소 입력',
+              hintStyle:
+              const TextStyle(
+                color:
+                AppColors
+                    .textSecondary,
+                fontWeight:
+                FontWeight
+                    .w600,
+              ),
+              prefixIcon:
+              const Icon(
+                Icons
+                    .hotel_rounded,
+                color:
+                AppColors
+                    .primary,
+              ),
+              filled: true,
+              fillColor:
+              AppColors
+                  .background,
+              border:
+              OutlineInputBorder(
+                borderRadius:
+                BorderRadius
+                    .circular(
+                  16,
+                ),
+                borderSide:
+                const BorderSide(
+                  color:
+                  AppColors
+                      .border,
+                ),
+              ),
+              enabledBorder:
+              OutlineInputBorder(
+                borderRadius:
+                BorderRadius
+                    .circular(
+                  16,
+                ),
+                borderSide:
+                const BorderSide(
+                  color:
+                  AppColors
+                      .border,
+                ),
+              ),
+              focusedBorder:
+              OutlineInputBorder(
+                borderRadius:
+                BorderRadius
+                    .circular(
+                  16,
+                ),
+                borderSide:
+                const BorderSide(
+                  color:
+                  AppColors
+                      .primary,
+                  width: 2,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
+}
 
-  Widget _placeTextField() {
-    return Container(
-      decoration:
-      BoxDecoration(
-        color:
-        AppColors.background,
-        borderRadius:
-        BorderRadius.circular(
-          16,
-        ),
-        border: Border.all(
-          color:
-          AppColors.border,
-        ),
-      ),
-      child: TextFormField(
-        initialValue:
-        entry.place,
-        onChanged:
-        onPlaceChanged,
-        textInputAction:
-        TextInputAction.done,
-        maxLength: 100,
-        decoration:
-        const InputDecoration(
-          counterText: '',
-          hintText:
-          '숙소명 또는 주소 입력',
-          hintStyle:
-          TextStyle(
-            color:
-            AppColors
-                .textSecondary,
-            fontWeight:
-            FontWeight.w600,
-          ),
-          prefixIcon:
-          Icon(
-            Icons
-                .location_on_outlined,
-            color:
-            AppColors.primary,
-          ),
-          border:
-          InputBorder.none,
-          contentPadding:
-          EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 17,
-          ),
-        ),
-      ),
-    );
-  }
+// ===========================================================
+// 숙박 시작일 / 종료일 선택 필드
+// ===========================================================
 
-  Widget _inputTile(
-      String title,
-      String subtitle,
-      IconData icon,
-      VoidCallback onTap,
+class _AccommodationDateField
+    extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool selected;
+
+  final VoidCallback onTap;
+
+  const _AccommodationDateField({
+    required this.label,
+    required this.value,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(
+      BuildContext context,
       ) {
     return Material(
       color:
@@ -626,38 +780,109 @@ class _AccommodationCard
       BorderRadius.circular(
         16,
       ),
-      child: ListTile(
-        shape:
-        RoundedRectangleBorder(
-          borderRadius:
-          BorderRadius.circular(
-            16,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius:
+        BorderRadius.circular(
+          16,
+        ),
+        child: Container(
+          width:
+          double.infinity,
+          padding:
+          const EdgeInsets
+              .symmetric(
+            horizontal: 14,
+            vertical: 14,
+          ),
+          decoration:
+          BoxDecoration(
+            borderRadius:
+            BorderRadius
+                .circular(
+              16,
+            ),
+            border: Border.all(
+              color: selected
+                  ? AppColors
+                  .primary
+                  : AppColors
+                  .border,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons
+                    .calendar_today_rounded,
+                color: selected
+                    ? AppColors
+                    .primary
+                    : AppColors
+                    .textSecondary,
+                size: 22,
+              ),
+
+              const SizedBox(
+                width: 12,
+              ),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment:
+                  CrossAxisAlignment
+                      .start,
+                  children: [
+                    Text(
+                      label,
+                      style:
+                      const TextStyle(
+                        color:
+                        AppColors
+                            .textSecondary,
+                        fontSize:
+                        12,
+                        fontWeight:
+                        FontWeight
+                            .w700,
+                      ),
+                    ),
+
+                    const SizedBox(
+                      height: 4,
+                    ),
+
+                    Text(
+                      value,
+                      style:
+                      TextStyle(
+                        color: selected
+                            ? AppColors
+                            .textPrimary
+                            : AppColors
+                            .textSecondary,
+                        fontWeight:
+                        selected
+                            ? FontWeight
+                            .w900
+                            : FontWeight
+                            .w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const Icon(
+                Icons
+                    .keyboard_arrow_down_rounded,
+                color:
+                AppColors
+                    .textSecondary,
+              ),
+            ],
           ),
         ),
-        leading: Icon(
-          icon,
-          color:
-          AppColors.primary,
-        ),
-        title: Text(
-          title,
-          style:
-          const TextStyle(
-            fontWeight:
-            FontWeight.w700,
-          ),
-        ),
-        subtitle:
-        Text(
-          subtitle,
-        ),
-        trailing:
-        const Icon(
-          Icons
-              .chevron_right_rounded,
-        ),
-        onTap:
-        onTap,
       ),
     );
   }

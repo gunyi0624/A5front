@@ -13,7 +13,7 @@ class TripStepHeader extends StatelessWidget {
   const TripStepHeader({
     super.key,
     required this.currentStep,
-    this.totalStep = 8,
+    this.totalStep = 9,
     this.title = '일정 생성',
     this.backRoute = AppRoutes.home,
   });
@@ -21,7 +21,12 @@ class TripStepHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
+      padding: const EdgeInsets.fromLTRB(
+        18,
+        16,
+        18,
+        8,
+      ),
       child: Row(
         children: [
           Material(
@@ -48,7 +53,10 @@ class TripStepHeader extends StatelessWidget {
           Expanded(
             child: Text(
               title,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              style: Theme.of(context)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(
                 fontWeight: FontWeight.w900,
               ),
             ),

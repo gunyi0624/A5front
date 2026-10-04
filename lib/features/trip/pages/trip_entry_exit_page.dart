@@ -30,6 +30,8 @@ class _TripEntryExitPageState extends State<TripEntryExitPage> {
   // 기존 36개 공항 +
   // 아사히카와, 쇼나이, 이즈모, 야마구치우베,
   // 신슈 마쓰모토, 구시로 공항을 포함합니다.
+  //
+  // 9개 권역별로 분류해 공항 선택 화면에 표시합니다.
   // =========================================================
 
   final List<_AirportGroup> airportGroups = const [
@@ -43,6 +45,7 @@ class _TripEntryExitPageState extends State<TripEntryExitPage> {
         '구시로공항',
       ],
     ),
+
     _AirportGroup(
       name: '도호쿠',
       airports: [
@@ -54,6 +57,7 @@ class _TripEntryExitPageState extends State<TripEntryExitPage> {
         '쇼나이공항',
       ],
     ),
+
     _AirportGroup(
       name: '간토',
       airports: [
@@ -62,6 +66,7 @@ class _TripEntryExitPageState extends State<TripEntryExitPage> {
         '이바라키공항',
       ],
     ),
+
     _AirportGroup(
       name: '주부',
       airports: [
@@ -73,13 +78,15 @@ class _TripEntryExitPageState extends State<TripEntryExitPage> {
         '신슈 마쓰모토공항',
       ],
     ),
+
     _AirportGroup(
-      name: '간사이(긴키)',
+      name: '간사이',
       airports: [
         '간사이국제공항',
         '고베공항',
       ],
     ),
+
     _AirportGroup(
       name: '주고쿠',
       airports: [
@@ -90,6 +97,7 @@ class _TripEntryExitPageState extends State<TripEntryExitPage> {
         '야마구치우베공항',
       ],
     ),
+
     _AirportGroup(
       name: '시코쿠',
       airports: [
@@ -99,6 +107,7 @@ class _TripEntryExitPageState extends State<TripEntryExitPage> {
         '도쿠시마공항',
       ],
     ),
+
     _AirportGroup(
       name: '규슈',
       airports: [
@@ -112,6 +121,7 @@ class _TripEntryExitPageState extends State<TripEntryExitPage> {
         '가고시마공항',
       ],
     ),
+
     _AirportGroup(
       name: '오키나와',
       airports: [
@@ -124,6 +134,9 @@ class _TripEntryExitPageState extends State<TripEntryExitPage> {
 
   // =========================================================
   // 입국 / 출국 공항 선택
+  //
+  // BottomSheet를 열어 42개 공항 중 하나를 선택합니다.
+  // 공항명뿐 아니라 권역명으로도 검색할 수 있습니다.
   // =========================================================
 
   Future<void> _selectAirport({
@@ -154,6 +167,12 @@ class _TripEntryExitPageState extends State<TripEntryExitPage> {
 
   // =========================================================
   // 입국 / 출국 시간 선택
+  //
+  // 현재 단계에서는 시간만 저장합니다.
+  //
+  // 당일치기 여행에서
+  // "출국시간 > 입국시간" 검증은
+  // 추후 Riverpod으로 1단계 날짜 정보와 연결한 뒤 처리합니다.
   // =========================================================
 
   Future<void> _selectTime({
@@ -175,7 +194,12 @@ class _TripEntryExitPageState extends State<TripEntryExitPage> {
 
   // =========================================================
   // 선택된 시간 표시
-  // 오전 / 오후 12시간 형식
+  //
+  // 오전 / 오후 12시간 형식으로 표시합니다.
+  //
+  // 예:
+  // 오전 9:30
+  // 오후 3:00
   // =========================================================
 
   String _formatTime(TimeOfDay? time) {
@@ -208,6 +232,14 @@ class _TripEntryExitPageState extends State<TripEntryExitPage> {
   //
   // 각 카드 우측 상단 X 버튼을 누르면
   // 해당 카드의 공항과 시간을 한 번에 지웁니다.
+  //
+  // 입국 정보 초기화:
+  // - 입국 공항
+  // - 입국 시간
+  //
+  // 출국 정보 초기화:
+  // - 출국 공항
+  // - 출국 시간
   // =========================================================
 
   void _clearEntryInfo() {
@@ -226,17 +258,25 @@ class _TripEntryExitPageState extends State<TripEntryExitPage> {
 
   // =========================================================
   // 페이지 이동
+  //
+  // 변경된 흐름:
+  //
+  // 2단계 여행 지역
+  //      ↓
+  // 3단계 입출국 정보
+  //      ↓
+  // 4단계 숙소
   // =========================================================
 
-  void _goNext() {
+  void _goPrevious() {
     context.go(
       AppRoutes.tripRegion,
     );
   }
 
-  void _goPrevious() {
+  void _goNext() {
     context.go(
-      AppRoutes.tripPeriod,
+      AppRoutes.tripAccommodation,
     );
   }
 
@@ -251,8 +291,12 @@ class _TripEntryExitPageState extends State<TripEntryExitPage> {
       body: SafeArea(
         child: Column(
           children: [
+            // =================================================
+            // 3단계 상단 헤더
+            // =================================================
+
             const TripStepHeader(
-              currentStep: 2,
+              currentStep: 3,
             ),
 
             const Padding(
@@ -263,7 +307,7 @@ class _TripEntryExitPageState extends State<TripEntryExitPage> {
                 0,
               ),
               child: TripStepIndicator(
-                currentStep: 2,
+                currentStep: 3,
               ),
             ),
 
@@ -310,7 +354,10 @@ class _TripEntryExitPageState extends State<TripEntryExitPage> {
                       airportLabel: '입국 공항',
                       airportValue: entryAirport,
                       timeLabel: '입국 예정 시간',
-                      timeValue: _formatTime(entryTime),
+                      timeValue: _formatTime(
+                        entryTime,
+                      ),
+
                       onAirportTap: () {
                         _selectAirport(
                           title: '입국 공항 선택',
@@ -321,6 +368,7 @@ class _TripEntryExitPageState extends State<TripEntryExitPage> {
                           },
                         );
                       },
+
                       onTimeTap: () {
                         _selectTime(
                           initialTime: entryTime,
@@ -353,7 +401,10 @@ class _TripEntryExitPageState extends State<TripEntryExitPage> {
                       airportLabel: '출국 공항',
                       airportValue: exitAirport,
                       timeLabel: '출국 예정 시간',
-                      timeValue: _formatTime(exitTime),
+                      timeValue: _formatTime(
+                        exitTime,
+                      ),
+
                       onAirportTap: () {
                         _selectAirport(
                           title: '출국 공항 선택',
@@ -364,6 +415,7 @@ class _TripEntryExitPageState extends State<TripEntryExitPage> {
                           },
                         );
                       },
+
                       onTimeTap: () {
                         _selectTime(
                           initialTime: exitTime,
@@ -389,16 +441,27 @@ class _TripEntryExitPageState extends State<TripEntryExitPage> {
 
                     // =================================================
                     // 입출국 정보 안내
+                    //
+                    // 현재 입출국 정보는 필수값으로 막지 않습니다.
+                    // 추후 입력하면 일정이 달라질 수 있음을 안내합니다.
                     // =================================================
 
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(
+                        16,
+                      ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEFF6FF),
-                        borderRadius: BorderRadius.circular(18),
+                        color: const Color(
+                          0xFFEFF6FF,
+                        ),
+                        borderRadius: BorderRadius.circular(
+                          18,
+                        ),
                         border: Border.all(
-                          color: const Color(0xFFBFDBFE),
+                          color: const Color(
+                            0xFFBFDBFE,
+                          ),
                         ),
                       ),
                       child: const Row(
@@ -409,9 +472,11 @@ class _TripEntryExitPageState extends State<TripEntryExitPage> {
                             color: AppColors.primary,
                             size: 22,
                           ),
+
                           SizedBox(
                             width: 10,
                           ),
+
                           Expanded(
                             child: Text(
                               '입출국 공항 정보를 입력하지 않으면 추후 입력 시 일정이 변동될 수 있습니다.',
@@ -430,6 +495,11 @@ class _TripEntryExitPageState extends State<TripEntryExitPage> {
               ),
             ),
 
+            // =================================================
+            // 이전 → 여행 지역
+            // 다음 → 숙소
+            // =================================================
+
             TripBottomNavigation(
               onPrevious: _goPrevious,
               onNext: _goNext,
@@ -444,8 +514,13 @@ class _TripEntryExitPageState extends State<TripEntryExitPage> {
 // ===========================================================
 // 입국 / 출국 정보 카드
 //
-// 카드 우측 상단의 X 버튼으로
-// 공항과 시간을 한 번에 초기화합니다.
+// 각 카드에는 다음 정보가 표시됩니다.
+//
+// - 선택한 공항
+// - 선택한 시간
+//
+// 카드 우측 상단 X 버튼으로
+// 해당 카드의 공항과 시간을 한 번에 초기화합니다.
 // ===========================================================
 
 class _EntryExitCard extends StatelessWidget {
@@ -477,10 +552,14 @@ class _EntryExitCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(
+        18,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(
+          22,
+        ),
         border: Border.all(
           color: AppColors.border,
         ),
@@ -500,7 +579,10 @@ class _EntryExitCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // =================================================
           // 카드 제목 + 전체 초기화 버튼
+          // =================================================
+
           Row(
             children: [
               Expanded(
@@ -533,7 +615,10 @@ class _EntryExitCard extends StatelessWidget {
             height: 12,
           ),
 
+          // =================================================
           // 공항 선택
+          // =================================================
+
           _SelectField(
             label: airportLabel,
             value: airportValue ?? '공항 선택',
@@ -546,7 +631,10 @@ class _EntryExitCard extends StatelessWidget {
             height: 12,
           ),
 
+          // =================================================
           // 시간 선택
+          // =================================================
+
           _SelectField(
             label: timeLabel,
             value: timeValue,
@@ -562,6 +650,8 @@ class _EntryExitCard extends StatelessWidget {
 
 // ===========================================================
 // 공항 / 시간 선택용 공통 필드
+//
+// 공항 선택과 시간 선택에서 동일한 UI를 사용합니다.
 // ===========================================================
 
 class _SelectField extends StatelessWidget {
@@ -584,10 +674,14 @@ class _SelectField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: AppColors.background,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(
+        16,
+      ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(
+          16,
+        ),
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(
@@ -595,7 +689,9 @@ class _SelectField extends StatelessWidget {
             vertical: 14,
           ),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(
+              16,
+            ),
             border: Border.all(
               color: AppColors.border,
             ),
@@ -658,8 +754,15 @@ class _SelectField extends StatelessWidget {
 // ===========================================================
 // 국제공항 선택 BottomSheet
 //
-// 검색어가 없으면 9개 권역별로 공항을 보여주고,
-// 검색어를 입력하면 해당 공항만 필터링합니다.
+// 검색어가 없을 때:
+// 9개 권역별로 42개 공항을 모두 표시
+//
+// 검색어가 있을 때:
+// 공항명 또는 권역명 기준으로 필터링
+//
+// 예:
+// "나리타" → 나리타국제공항
+// "홋카이도" → 홋카이도 권역 공항 전체
 // ===========================================================
 
 class _AirportSearchBottomSheet extends StatefulWidget {
@@ -690,10 +793,12 @@ class _AirportSearchBottomSheetState
   }
 
   // =========================================================
-  // 검색 결과 생성
+  // 검색 결과
   //
-  // 공항명뿐 아니라 권역명으로도 검색할 수 있습니다.
-  // 예: "홋카이도" 검색 → 홋카이도의 모든 공항 표시
+  // 권역명이 검색어와 일치하면
+  // 해당 권역의 모든 공항을 표시합니다.
+  //
+  // 그 외에는 공항명에 검색어가 포함된 공항만 표시합니다.
   // =========================================================
 
   List<_AirportGroup> get filteredGroups {
@@ -756,14 +861,21 @@ class _AirportSearchBottomSheetState
               height: 12,
             ),
 
+            // BottomSheet 상단 드래그 표시
             Container(
               width: 42,
               height: 5,
               decoration: BoxDecoration(
                 color: AppColors.border,
-                borderRadius: BorderRadius.circular(999),
+                borderRadius: BorderRadius.circular(
+                  999,
+                ),
               ),
             ),
+
+            // =================================================
+            // 제목 + 닫기 버튼
+            // =================================================
 
             Padding(
               padding: const EdgeInsets.fromLTRB(
@@ -788,7 +900,9 @@ class _AirportSearchBottomSheetState
 
                   IconButton(
                     onPressed: () {
-                      Navigator.pop(context);
+                      Navigator.pop(
+                        context,
+                      );
                     },
                     icon: const Icon(
                       Icons.close_rounded,
@@ -817,13 +931,17 @@ class _AirportSearchBottomSheetState
                   filled: true,
                   fillColor: AppColors.background,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(
+                      16,
+                    ),
                     borderSide: const BorderSide(
                       color: AppColors.border,
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(
+                      16,
+                    ),
                     borderSide: const BorderSide(
                       color: AppColors.border,
                     ),
@@ -837,7 +955,7 @@ class _AirportSearchBottomSheetState
             ),
 
             // =================================================
-            // 9개 권역별 공항 목록
+            // 검색 결과 / 권역별 공항 목록
             // =================================================
 
             Expanded(
@@ -883,6 +1001,8 @@ class _AirportSearchBottomSheetState
 
 // ===========================================================
 // 권역별 공항 목록
+//
+// 권역명 아래에 해당 권역의 공항을 표시합니다.
 // ===========================================================
 
 class _AirportGroupSection extends StatelessWidget {
@@ -903,7 +1023,10 @@ class _AirportGroupSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 권역명
+          // =================================================
+          // 권역명 + 현재 표시되는 공항 수
+          // =================================================
+
           Padding(
             padding: const EdgeInsets.fromLTRB(
               10,
@@ -938,18 +1061,25 @@ class _AirportGroupSection extends StatelessWidget {
             ),
           ),
 
+          // =================================================
           // 해당 권역 공항 목록
+          // =================================================
+
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(
+                16,
+              ),
               border: Border.all(
                 color: AppColors.border,
               ),
             ),
             child: Column(
               children: [
-                for (int i = 0; i < group.airports.length; i++) ...[
+                for (int i = 0;
+                i < group.airports.length;
+                i++) ...[
                   ListTile(
                     leading: const Icon(
                       Icons.local_airport_rounded,
@@ -988,6 +1118,11 @@ class _AirportGroupSection extends StatelessWidget {
 
 // ===========================================================
 // 공항 권역 데이터 모델
+//
+// 각 권역은
+// - 권역명
+// - 권역에 속한 공항 목록
+// 정보를 가집니다.
 // ===========================================================
 
 class _AirportGroup {

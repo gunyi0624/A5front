@@ -8,25 +8,46 @@ import '../widgets/trip_step_header.dart';
 import '../widgets/trip_step_indicator.dart';
 
 class TripThemePage extends StatefulWidget {
-  const TripThemePage({
-    super.key,
-  });
+  const TripThemePage({super.key});
 
   @override
-  State<TripThemePage> createState() =>
-      _TripThemePageState();
+  State<TripThemePage> createState() => _TripThemePageState();
+}
+
+// ===========================================================
+// 현재 선택 모드
+//
+// preferred : 일정에 적극 반영하고 싶은 선호 테마
+// excluded  : 일정에서 완전히 제외하고 싶은 테마
+// ===========================================================
+
+enum _ThemeSelectionMode {
+  preferred,
+  excluded,
 }
 
 class _TripThemePageState extends State<TripThemePage> {
+  // 선호 테마는 기존과 동일하게 최대 3개
   static const int maxThemeSelection = 3;
 
+  // =========================================================
+  // 테마 선택 상태
+  //
+  // selectedThemes:
+  // AI가 적극적으로 추천할 선호 테마
+  //
+  // excludedThemes:
+  // 일정 추천 후보에서 완전히 제외할 테마
+  // =========================================================
+
   final Set<String> selectedThemes = {};
+  final Set<String> excludedThemes = {};
+
+  _ThemeSelectionMode selectionMode =
+      _ThemeSelectionMode.preferred;
 
   // =========================================================
-  // 여행 테마 목록
-  //
-  // 테마 항목 자체는 아직 최종 확정 전이므로
-  // 현재 목록을 그대로 유지합니다.
+  // 기존 12개 테마
   // =========================================================
 
   final List<_ThemeItem> themes = const [
@@ -56,7 +77,7 @@ class _TripThemePageState extends State<TripThemePage> {
       icon: Icons.photo_camera_rounded,
     ),
     _ThemeItem(
-      name: '애니메이션',
+      name: '서브컬쳐',
       description: '애니메이션, 캐릭터, 굿즈 명소',
       icon: Icons.animation_rounded,
     ),
@@ -93,32 +114,56 @@ class _TripThemePageState extends State<TripThemePage> {
   ];
 
   // =========================================================
-  // 테마 선택 / 선택 해제
-  //
-  // 최대 3개까지 선택 가능하며,
-  // 이미 선택한 항목을 다시 누르면 선택이 해제됩니다.
+  // 선호 / 제외 모드 변경
   // =========================================================
 
-  void _toggleTheme(
+  void _changeSelectionMode(
+      _ThemeSelectionMode mode,
+      ) {
+    setState(() {
+      selectionMode = mode;
+    });
+  }
+
+  // =========================================================
+  // 선호 테마 선택 / 해제
+  //
+  // - 최대 3개
+  // - 제외 테마와 중복 선택 불가
+  // =========================================================
+
+  void _togglePreferredTheme(
       String theme,
       ) {
+    // 이미 선호 테마라면 해제
     if (selectedThemes.contains(theme)) {
       setState(() {
         selectedThemes.remove(theme);
       });
-
       return;
     }
 
+    // 제외 테마로 선택된 항목은 선호 테마로 중복 선택 불가
+    if (excludedThemes.contains(theme)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            '이미 제외 테마로 선택한 항목입니다.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    // 기존 최대 3개 제한 유지
     if (selectedThemes.length >= maxThemeSelection) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            '여행 테마는 최대 3개까지 선택할 수 있습니다.',
+            '선호 테마는 최대 3개까지 선택할 수 있습니다.',
           ),
         ),
       );
-
       return;
     }
 
@@ -128,8 +173,59 @@ class _TripThemePageState extends State<TripThemePage> {
   }
 
   // =========================================================
-  // 다음 단계 이동
-  // 최소 1개의 테마는 선택해야 합니다.
+  // 제외 테마 선택 / 해제
+  //
+  // - 선택 개수 제한 없음
+  // - 선호 테마와 중복 선택 불가
+  // =========================================================
+
+  void _toggleExcludedTheme(
+      String theme,
+      ) {
+    // 이미 제외 테마라면 해제
+    if (excludedThemes.contains(theme)) {
+      setState(() {
+        excludedThemes.remove(theme);
+      });
+      return;
+    }
+
+    // 선호 테마로 선택된 항목은 제외 테마로 중복 선택 불가
+    if (selectedThemes.contains(theme)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            '이미 선호 테마로 선택한 항목입니다.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      excludedThemes.add(theme);
+    });
+  }
+
+  // =========================================================
+  // 현재 모드에 따라 테마 선택
+  // =========================================================
+
+  void _toggleTheme(
+      String theme,
+      ) {
+    if (selectionMode == _ThemeSelectionMode.preferred) {
+      _togglePreferredTheme(theme);
+    } else {
+      _toggleExcludedTheme(theme);
+    }
+  }
+
+  // =========================================================
+  // 다음 단계
+  //
+  // 선호 테마는 기존과 동일하게 최소 1개 필수입니다.
+  // 제외 테마는 선택 사항입니다.
   // =========================================================
 
   void _goNext() {
@@ -137,11 +233,10 @@ class _TripThemePageState extends State<TripThemePage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            '여행 테마를 하나 이상 선택해주세요.',
+            '선호 테마를 하나 이상 선택해주세요.',
           ),
         ),
       );
-
       return;
     }
 
@@ -155,14 +250,29 @@ class _TripThemePageState extends State<TripThemePage> {
   // =========================================================
 
   @override
-  Widget build(
-      BuildContext context,
-      ) {
+  Widget build(BuildContext context) {
+    final isPreferredMode =
+        selectionMode == _ThemeSelectionMode.preferred;
+
+    final currentSelectedThemes =
+    isPreferredMode
+        ? selectedThemes
+        : excludedThemes;
+
+    final selectionColor =
+    isPreferredMode
+        ? AppColors.primary
+        : Colors.red.shade600;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
+            // =================================================
+            // 7단계 상단 헤더
+            // =================================================
+
             const TripStepHeader(
               currentStep: 7,
             ),
@@ -203,10 +313,114 @@ class _TripThemePageState extends State<TripThemePage> {
                     ),
 
                     Text(
-                      '원하는 테마를 최대 3개까지 선택하면 AI가 취향에 맞는 장소를 조합합니다.',
+                      '원하는 테마와 일정에서 제외하고 싶은 테마를 설정해주세요.',
                       style: Theme.of(context)
                           .textTheme
                           .bodyLarge
+                          ?.copyWith(
+                        color: AppColors.textSecondary,
+                        height: 1.45,
+                      ),
+                    ),
+
+                    const SizedBox(
+                      height: 22,
+                    ),
+
+                    // =================================================
+                    // 선호 테마 / 제외 테마 전환 버튼
+                    // =================================================
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _ThemeModeButton(
+                            title: '선호 테마',
+                            icon: Icons.favorite_rounded,
+                            selected:
+                            selectionMode ==
+                                _ThemeSelectionMode.preferred,
+                            selectedColor:
+                            AppColors.primary,
+                            onTap: () {
+                              _changeSelectionMode(
+                                _ThemeSelectionMode.preferred,
+                              );
+                            },
+                          ),
+                        ),
+
+                        const SizedBox(
+                          width: 10,
+                        ),
+
+                        Expanded(
+                          child: _ThemeModeButton(
+                            title: '제외 테마',
+                            icon: Icons.block_rounded,
+                            selected:
+                            selectionMode ==
+                                _ThemeSelectionMode.excluded,
+                            selectedColor:
+                            Colors.red.shade600,
+                            onTap: () {
+                              _changeSelectionMode(
+                                _ThemeSelectionMode.excluded,
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(
+                      height: 24,
+                    ),
+
+                    // =================================================
+                    // 현재 선택 모드 설명
+                    // =================================================
+
+                    Row(
+                      children: [
+                        Icon(
+                          isPreferredMode
+                              ? Icons.favorite_rounded
+                              : Icons.block_rounded,
+                          color: selectionColor,
+                          size: 22,
+                        ),
+
+                        const SizedBox(
+                          width: 8,
+                        ),
+
+                        Text(
+                          isPreferredMode
+                              ? '선호 테마'
+                              : '제외 테마',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleLarge
+                              ?.copyWith(
+                            fontWeight:
+                            FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(
+                      height: 8,
+                    ),
+
+                    Text(
+                      isPreferredMode
+                          ? '일정에 적극적으로 반영하고 싶은 테마를 최대 3개까지 선택해주세요.'
+                          : '일정에 절대 포함하고 싶지 않은 테마를 선택해주세요. 선택 개수에는 제한이 없습니다.',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
                           ?.copyWith(
                         color:
                         AppColors.textSecondary,
@@ -219,7 +433,7 @@ class _TripThemePageState extends State<TripThemePage> {
                     ),
 
                     // =================================================
-                    // 현재 선택한 테마 표시
+                    // 현재 모드 선택 결과
                     // =================================================
 
                     Container(
@@ -228,9 +442,8 @@ class _TripThemePageState extends State<TripThemePage> {
                         14,
                       ),
                       decoration: BoxDecoration(
-                        color:
-                        AppColors.primary.withValues(
-                          alpha: 0.08,
+                        color: selectionColor.withOpacity(
+                          0.08,
                         ),
                         borderRadius:
                         BorderRadius.circular(
@@ -238,21 +451,23 @@ class _TripThemePageState extends State<TripThemePage> {
                         ),
                       ),
                       child: Row(
-                        crossAxisAlignment:
-                        CrossAxisAlignment.start,
                         children: [
                           Expanded(
                             child: Text(
-                              selectedThemes.isEmpty
-                                  ? '여행 테마를 선택해주세요.'
-                                  : '선택한 테마: ${selectedThemes.join(', ')}',
+                              currentSelectedThemes.isEmpty
+                                  ? isPreferredMode
+                                  ? '선호 테마를 선택해주세요.'
+                                  : '제외할 테마가 없습니다.'
+                                  : isPreferredMode
+                                  ? '선호 테마: ${currentSelectedThemes.join(', ')}'
+                                  : '제외 테마: ${currentSelectedThemes.join(', ')}',
                               style: TextStyle(
                                 color:
-                                selectedThemes.isEmpty
+                                currentSelectedThemes
+                                    .isEmpty
                                     ? AppColors
                                     .textSecondary
-                                    : AppColors
-                                    .primary,
+                                    : selectionColor,
                                 fontWeight:
                                 FontWeight.w800,
                                 height: 1.4,
@@ -265,10 +480,12 @@ class _TripThemePageState extends State<TripThemePage> {
                           ),
 
                           Text(
-                            '${selectedThemes.length}/$maxThemeSelection',
-                            style: const TextStyle(
+                            isPreferredMode
+                                ? '${selectedThemes.length}/$maxThemeSelection'
+                                : '${excludedThemes.length}개',
+                            style: TextStyle(
                               color:
-                              AppColors.primary,
+                              selectionColor,
                               fontWeight:
                               FontWeight.w900,
                             ),
@@ -282,65 +499,87 @@ class _TripThemePageState extends State<TripThemePage> {
                     ),
 
                     // =================================================
-                    // 반응형 테마 카드 영역
+                    // 테마 목록
                     //
-                    // 일반적인 휴대폰 폭에서는 2열,
-                    // 매우 좁은 화면에서는 1열로 전환합니다.
-                    //
-                    // GridView처럼 높이를 고정하지 않기 때문에
-                    // 테마명이나 설명이 길어져도 카드가 자연스럽게
-                    // 아래로 늘어납니다.
+                    // 선호 / 제외 모드에서 같은 12개 카드 목록을
+                    // 그대로 재사용합니다.
                     // =================================================
 
-                    LayoutBuilder(
-                      builder: (
-                          context,
-                          constraints,
-                          ) {
-                        const spacing = 14.0;
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics:
+                      const NeverScrollableScrollPhysics(),
+                      itemCount: themes.length,
+                      gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 14,
+                        crossAxisSpacing: 14,
+                        childAspectRatio: 0.92,
+                      ),
+                      itemBuilder: (context, index) {
+                        final theme =
+                        themes[index];
 
-                        final availableWidth =
-                            constraints.maxWidth;
+                        final selected =
+                        currentSelectedThemes.contains(
+                          theme.name,
+                        );
 
-                        final useSingleColumn =
-                            availableWidth < 330;
+                        // 반대쪽 모드에서 이미 선택되어 있는지 표시
+                        final selectedInOtherMode =
+                        isPreferredMode
+                            ? excludedThemes.contains(
+                          theme.name,
+                        )
+                            : selectedThemes.contains(
+                          theme.name,
+                        );
 
-                        final cardWidth =
-                        useSingleColumn
-                            ? availableWidth
-                            : (availableWidth -
-                            spacing) /
-                            2;
-
-                        return Wrap(
-                          spacing: spacing,
-                          runSpacing: spacing,
-                          children: [
-                            for (final theme in themes)
-                              SizedBox(
-                                width: cardWidth,
-                                child: _ThemeCard(
-                                  theme: theme,
-                                  selected:
-                                  selectedThemes
-                                      .contains(
-                                    theme.name,
-                                  ),
-                                  onTap: () {
-                                    _toggleTheme(
-                                      theme.name,
-                                    );
-                                  },
-                                ),
-                              ),
-                          ],
+                        return _ThemeCard(
+                          theme: theme,
+                          selected: selected,
+                          selectedInOtherMode:
+                          selectedInOtherMode,
+                          selectionColor:
+                          selectionColor,
+                          selectionMode:
+                          selectionMode,
+                          onTap: () {
+                            _toggleTheme(
+                              theme.name,
+                            );
+                          },
                         );
                       },
                     ),
+
+                    // =================================================
+                    // 전체 선택 결과 요약
+                    // =================================================
+
+                    if (selectedThemes.isNotEmpty ||
+                        excludedThemes.isNotEmpty) ...[
+                      const SizedBox(
+                        height: 26,
+                      ),
+
+                      _ThemeResultSummary(
+                        selectedThemes:
+                        selectedThemes,
+                        excludedThemes:
+                        excludedThemes,
+                      ),
+                    ],
                   ],
                 ),
               ),
             ),
+
+            // =================================================
+            // 이전 → 동행자
+            // 다음 → 이동수단
+            // =================================================
 
             TripBottomNavigation(
               onPrevious: () {
@@ -358,256 +597,533 @@ class _TripThemePageState extends State<TripThemePage> {
 }
 
 // ===========================================================
-// 개별 테마 카드
+// 선호 / 제외 모드 전환 버튼
+// ===========================================================
+
+class _ThemeModeButton extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final bool selected;
+  final Color selectedColor;
+  final VoidCallback onTap;
+
+  const _ThemeModeButton({
+    required this.title,
+    required this.icon,
+    required this.selected,
+    required this.selectedColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color:
+      selected
+          ? selectedColor.withOpacity(
+        0.08,
+      )
+          : Colors.white,
+      borderRadius: BorderRadius.circular(
+        16,
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius:
+        BorderRadius.circular(
+          16,
+        ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 14,
+          ),
+          decoration: BoxDecoration(
+            borderRadius:
+            BorderRadius.circular(
+              16,
+            ),
+            border: Border.all(
+              color:
+              selected
+                  ? selectedColor
+                  : AppColors.border,
+              width:
+              selected ? 2 : 1,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment:
+            MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                color:
+                selected
+                    ? selectedColor
+                    : AppColors
+                    .textSecondary,
+                size: 20,
+              ),
+
+              const SizedBox(
+                width: 7,
+              ),
+
+              Text(
+                title,
+                style: TextStyle(
+                  color:
+                  selected
+                      ? selectedColor
+                      : AppColors
+                      .textPrimary,
+                  fontWeight:
+                  FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ===========================================================
+// 테마 카드
 //
-// 카드 폭을 기준으로 아이콘과 글자 크기를 조절하며,
-// 텍스트 길이에 따라 카드 높이가 자동으로 늘어납니다.
+// 선호 모드:
+// 선택 시 파란색
+//
+// 제외 모드:
+// 선택 시 빨간색
+//
+// 반대 모드에서 이미 선택된 테마는
+// 회색 상태로 표시합니다.
 // ===========================================================
 
 class _ThemeCard extends StatelessWidget {
   final _ThemeItem theme;
   final bool selected;
+  final bool selectedInOtherMode;
+  final Color selectionColor;
+  final _ThemeSelectionMode selectionMode;
   final VoidCallback onTap;
 
   const _ThemeCard({
     required this.theme,
     required this.selected,
+    required this.selectedInOtherMode,
+    required this.selectionColor,
+    required this.selectionMode,
     required this.onTap,
   });
 
   @override
-  Widget build(
-      BuildContext context,
-      ) {
+  Widget build(BuildContext context) {
     final color =
     selected
-        ? AppColors.primary
+        ? selectionColor
         : AppColors.textSecondary;
 
-    return LayoutBuilder(
-      builder: (
-          context,
-          constraints,
-          ) {
-        // 카드 폭에 따라 내부 요소 크기를 조금씩 조정
-        final compact =
-            constraints.maxWidth < 160;
-
-        final cardPadding =
-        compact ? 14.0 : 18.0;
-
-        final iconBoxSize =
-        compact ? 46.0 : 52.0;
-
-        final iconSize =
-        compact ? 26.0 : 30.0;
-
-        final titleSize =
-        compact ? 17.0 : 19.0;
-
-        return Material(
-          color: Colors.white,
-          borderRadius:
-          BorderRadius.circular(
-            24,
-          ),
-          child: InkWell(
-            onTap: onTap,
-            borderRadius:
-            BorderRadius.circular(
-              24,
-            ),
-            child: AnimatedContainer(
-              duration:
-              const Duration(
-                milliseconds: 180,
-              ),
-              width: double.infinity,
-
-              // 카드 높이를 고정하지 않고 최소 높이만 지정
-              constraints:
-              const BoxConstraints(
-                minHeight: 190,
-              ),
-
+    return Material(
+      color:
+      selectedInOtherMode
+          ? AppColors.border.withOpacity(
+        0.18,
+      )
+          : Colors.white,
+      borderRadius:
+      BorderRadius.circular(
+        24,
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius:
+        BorderRadius.circular(
+          24,
+        ),
+        child: Stack(
+          children: [
+            Container(
+              width:
+              double.infinity,
+              height:
+              double.infinity,
               padding:
-              EdgeInsets.all(
-                cardPadding,
+              const EdgeInsets.all(
+                18,
               ),
-              decoration: BoxDecoration(
+              decoration:
+              BoxDecoration(
                 borderRadius:
                 BorderRadius.circular(
                   24,
                 ),
-                border: Border.all(
-                  color:
-                  selected
-                      ? AppColors.primary
+                border:
+                Border.all(
+                  color: selected
+                      ? selectionColor
                       : AppColors.border,
                   width:
                   selected ? 2 : 1,
                 ),
                 boxShadow: [
-                  BoxShadow(
-                    color:
-                    selected
-                        ? AppColors.primary
-                        .withValues(
-                      alpha: 0.12,
-                    )
-                        : Colors.black
-                        .withValues(
-                      alpha: 0.04,
+                  if (!selectedInOtherMode)
+                    BoxShadow(
+                      color: selected
+                          ? selectionColor
+                          .withOpacity(
+                        0.12,
+                      )
+                          : Colors.black
+                          .withOpacity(
+                        0.04,
+                      ),
+                      blurRadius:
+                      18,
+                      offset:
+                      const Offset(
+                        0,
+                        8,
+                      ),
                     ),
-                    blurRadius: 18,
-                    offset:
-                    const Offset(
-                      0,
-                      8,
-                    ),
-                  ),
                 ],
               ),
-              child: Stack(
+              child:
+              Column(
+                crossAxisAlignment:
+                CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                    children: [
-                      // =============================================
-                      // 테마 아이콘
-                      // =============================================
-
-                      Container(
-                        width: iconBoxSize,
-                        height: iconBoxSize,
-                        decoration:
-                        BoxDecoration(
-                          color:
-                          color.withValues(
-                            alpha: 0.1,
-                          ),
-                          borderRadius:
-                          BorderRadius.circular(
-                            18,
-                          ),
-                        ),
-                        child: Icon(
-                          theme.icon,
-                          color: color,
-                          size: iconSize,
-                        ),
+                  Container(
+                    width:
+                    52,
+                    height:
+                    52,
+                    decoration:
+                    BoxDecoration(
+                      color:
+                      color.withOpacity(
+                        0.1,
                       ),
-
-                      const SizedBox(
-                        height: 24,
-                      ),
-
-                      // =============================================
-                      // 테마 이름
-                      //
-                      // maxLines를 강제하지 않아서
-                      // 긴 이름도 자연스럽게 줄바꿈됩니다.
-                      // =============================================
-
-                      Padding(
-                        padding:
-                        const EdgeInsets.only(
-                          right: 22,
-                        ),
-                        child: Text(
-                          theme.name,
-                          softWrap: true,
-                          style: TextStyle(
-                            fontSize:
-                            titleSize,
-                            height: 1.2,
-                            fontWeight:
-                            FontWeight.w900,
-                            color:
-                            selected
-                                ? AppColors
-                                .primary
-                                : AppColors
-                                .textPrimary,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(
-                        height: 8,
-                      ),
-
-                      // =============================================
-                      // 테마 설명
-                      // 설명이 길어져도 자동 줄바꿈
-                      // =============================================
-
-                      Text(
-                        theme.description,
-                        softWrap: true,
-                        style:
-                        Theme.of(
-                          context,
-                        )
-                            .textTheme
-                            .bodyMedium
-                            ?.copyWith(
-                          color:
-                          AppColors
-                              .textSecondary,
-                          height: 1.4,
-                          fontSize:
-                          compact
-                              ? 12.5
-                              : null,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  // =============================================
-                  // 선택 상태 체크 표시
-                  // =============================================
-
-                  if (selected)
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      child: Container(
-                        width:
-                        compact
-                            ? 26
-                            : 28,
-                        height:
-                        compact
-                            ? 26
-                            : 28,
-                        decoration:
-                        const BoxDecoration(
-                          color:
-                          AppColors.primary,
-                          shape:
-                          BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons
-                              .check_rounded,
-                          color:
-                          Colors.white,
-                          size:
-                          compact
-                              ? 17
-                              : 19,
-                        ),
+                      borderRadius:
+                      BorderRadius.circular(
+                        18,
                       ),
                     ),
+                    child:
+                    Icon(
+                      theme.icon,
+                      color:
+                      selectedInOtherMode
+                          ? AppColors
+                          .textSecondary
+                          .withOpacity(
+                        0.55,
+                      )
+                          : color,
+                      size:
+                      30,
+                    ),
+                  ),
+
+                  const Spacer(),
+
+                  Text(
+                    theme.name,
+                    style:
+                    Theme.of(context)
+                        .textTheme
+                        .titleLarge
+                        ?.copyWith(
+                      fontWeight:
+                      FontWeight.w900,
+                      color: selected
+                          ? selectionColor
+                          : selectedInOtherMode
+                          ? AppColors
+                          .textSecondary
+                          : AppColors
+                          .textPrimary,
+                    ),
+                  ),
+
+                  const SizedBox(
+                    height:
+                    8,
+                  ),
+
+                  Text(
+                    theme.description,
+                    style:
+                    Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(
+                      color: selectedInOtherMode
+                          ? AppColors
+                          .textSecondary
+                          .withOpacity(
+                        0.6,
+                      )
+                          : AppColors
+                          .textSecondary,
+                      height:
+                      1.35,
+                    ),
+                  ),
                 ],
               ),
             ),
+
+            // =================================================
+            // 현재 모드에서 선택된 테마 표시
+            // =================================================
+
+            if (selected)
+              Positioned(
+                top:
+                12,
+                right:
+                12,
+                child:
+                Container(
+                  width:
+                  28,
+                  height:
+                  28,
+                  decoration:
+                  BoxDecoration(
+                    color:
+                    selectionColor,
+                    shape:
+                    BoxShape.circle,
+                  ),
+                  child:
+                  Icon(
+                    selectionMode ==
+                        _ThemeSelectionMode.preferred
+                        ? Icons.check_rounded
+                        : Icons.block_rounded,
+                    color:
+                    Colors.white,
+                    size:
+                    18,
+                  ),
+                ),
+              ),
+
+            // =================================================
+            // 반대 모드에서 이미 선택된 테마 표시
+            // =================================================
+
+            if (selectedInOtherMode)
+              Positioned(
+                top:
+                12,
+                right:
+                12,
+                child:
+                Container(
+                  width:
+                  28,
+                  height:
+                  28,
+                  decoration:
+                  BoxDecoration(
+                    color:
+                    AppColors.textSecondary
+                        .withOpacity(
+                      0.75,
+                    ),
+                    shape:
+                    BoxShape.circle,
+                  ),
+                  child:
+                  const Icon(
+                    Icons.lock_rounded,
+                    color:
+                    Colors.white,
+                    size:
+                    16,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ===========================================================
+// 선호 / 제외 테마 전체 결과 요약
+// ===========================================================
+
+class _ThemeResultSummary extends StatelessWidget {
+  final Set<String> selectedThemes;
+  final Set<String> excludedThemes;
+
+  const _ThemeResultSummary({
+    required this.selectedThemes,
+    required this.excludedThemes,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width:
+      double.infinity,
+      padding:
+      const EdgeInsets.all(
+        16,
+      ),
+      decoration:
+      BoxDecoration(
+        color:
+        Colors.white,
+        borderRadius:
+        BorderRadius.circular(
+          18,
+        ),
+        border:
+        Border.all(
+          color:
+          AppColors.border,
+        ),
+      ),
+      child:
+      Column(
+        crossAxisAlignment:
+        CrossAxisAlignment.start,
+        children: [
+          Text(
+            '선택 결과',
+            style:
+            Theme.of(context)
+                .textTheme
+                .bodyLarge
+                ?.copyWith(
+              fontWeight:
+              FontWeight.w900,
+            ),
           ),
-        );
-      },
+
+          const SizedBox(
+            height:
+            14,
+          ),
+
+          _ThemeSummaryRow(
+            icon:
+            Icons.favorite_rounded,
+            title:
+            '선호 테마',
+            value:
+            selectedThemes.isEmpty
+                ? '선택 안 함'
+                : selectedThemes.join(', '),
+            color:
+            AppColors.primary,
+          ),
+
+          const SizedBox(
+            height:
+            12,
+          ),
+
+          _ThemeSummaryRow(
+            icon:
+            Icons.block_rounded,
+            title:
+            '제외 테마',
+            value:
+            excludedThemes.isEmpty
+                ? '선택 안 함'
+                : excludedThemes.join(', '),
+            color:
+            Colors.red.shade600,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ===========================================================
+// 결과 요약 행
+// ===========================================================
+
+class _ThemeSummaryRow extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String value;
+  final Color color;
+
+  const _ThemeSummaryRow({
+    required this.icon,
+    required this.title,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment:
+      CrossAxisAlignment.start,
+      children: [
+        Icon(
+          icon,
+          color:
+          color,
+          size:
+          20,
+        ),
+
+        const SizedBox(
+          width:
+          8,
+        ),
+
+        SizedBox(
+          width:
+          70,
+          child:
+          Text(
+            title,
+            style:
+            TextStyle(
+              color:
+              color,
+              fontWeight:
+              FontWeight.w800,
+            ),
+          ),
+        ),
+
+        const SizedBox(
+          width:
+          8,
+        ),
+
+        Expanded(
+          child:
+          Text(
+            value,
+            style:
+            const TextStyle(
+              color:
+              AppColors.textPrimary,
+              fontWeight:
+              FontWeight.w700,
+              height:
+              1.4,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

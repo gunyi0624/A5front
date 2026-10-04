@@ -1,7 +1,9 @@
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -24,58 +26,395 @@ class ItineraryResultPage extends StatefulWidget {
       _ItineraryResultPageState();
 }
 
-class _ItineraryResultPageState
-    extends State<ItineraryResultPage> {
+class _ItineraryResultPageState extends State<ItineraryResultPage> {
   late bool isSaved;
-
   bool _isProcessingPdf = false;
 
-  final PublicFileSaver _fileSaver =
-  PublicFileSaver();
+  final PublicFileSaver _fileSaver = PublicFileSaver();
+
+  late final PageController _pageController;
+
+  GoogleMapController? _mapController;
+
+  int selectedDayIndex = 0;
+
+  // TODO: 추후 백엔드에서 전달받은 추천 교통패스 값으로 교체
+  final String recommendedPass = 'JR 도쿄 와이드 패스';
+
+  // =========================================================
+  // 날짜별 여행 일정
+  //
+  // 현재는 프론트 테스트를 위해 임시 데이터를 사용합니다.
+  // 추후 백엔드 응답으로 교체합니다.
+  // =========================================================
+
+  final List<_ItineraryDay> days = [
+    _ItineraryDay(
+      dayNumber: 1,
+      dateLabel: '2026.07.02(목)',
+      items: [
+        _ItineraryItem(
+          time: '09:00',
+          title: '도쿄역',
+          description: '여행 시작 지점',
+          category: '교통',
+          latitude: 35.681236,
+          longitude: 139.767125,
+        ),
+        _ItineraryItem(
+          time: '10:00',
+          title: '아사쿠사 센소지',
+          description: '도쿄 대표 전통 사찰 관광',
+          category: '관광',
+          latitude: 35.714765,
+          longitude: 139.796655,
+        ),
+        _ItineraryItem(
+          time: '12:30',
+          title: '우에노 맛집 거리',
+          description: '현지 음식 중심 점심 식사',
+          category: '식사',
+          latitude: 35.709700,
+          longitude: 139.774700,
+        ),
+        _ItineraryItem(
+          time: '14:00',
+          title: '우에노 공원',
+          description: '산책과 휴식 중심 일정',
+          category: '힐링',
+          latitude: 35.714800,
+          longitude: 139.773100,
+        ),
+        _ItineraryItem(
+          time: '16:00',
+          title: '아키하바라',
+          description: '쇼핑 및 서브컬처 거리 탐방',
+          category: '쇼핑',
+          latitude: 35.698400,
+          longitude: 139.773000,
+        ),
+      ],
+    ),
+    _ItineraryDay(
+      dayNumber: 2,
+      dateLabel: '2026.07.03(금)',
+      items: [
+        _ItineraryItem(
+          time: '09:00',
+          title: '메이지 신궁',
+          description: '도심 속 숲과 신사를 둘러보는 일정',
+          category: '문화',
+          latitude: 35.676400,
+          longitude: 139.699300,
+        ),
+        _ItineraryItem(
+          time: '11:00',
+          title: '하라주쿠',
+          description: '패션과 개성 있는 상점 거리 탐방',
+          category: '쇼핑',
+          latitude: 35.670200,
+          longitude: 139.702700,
+        ),
+        _ItineraryItem(
+          time: '13:00',
+          title: '시부야 스크램블',
+          description: '도쿄 대표 도심 명소 방문',
+          category: '관광',
+          latitude: 35.659500,
+          longitude: 139.700500,
+        ),
+        _ItineraryItem(
+          time: '15:30',
+          title: '롯폰기 힐즈',
+          description: '도심 전망과 쇼핑을 함께 즐기는 일정',
+          category: '관광',
+          latitude: 35.660500,
+          longitude: 139.729200,
+        ),
+        _ItineraryItem(
+          time: '18:30',
+          title: '도쿄 타워',
+          description: '도쿄 야경 감상',
+          category: '야경',
+          latitude: 35.658600,
+          longitude: 139.745400,
+        ),
+      ],
+    ),
+    _ItineraryDay(
+      dayNumber: 3,
+      dateLabel: '2026.07.04(토)',
+      items: [
+        _ItineraryItem(
+          time: '09:00',
+          title: '츠키지 장외시장',
+          description: '다양한 일본 음식과 시장 풍경 체험',
+          category: '식사',
+          latitude: 35.665500,
+          longitude: 139.770700,
+        ),
+        _ItineraryItem(
+          time: '11:30',
+          title: '긴자 거리',
+          description: '백화점과 유명 상점가 쇼핑',
+          category: '쇼핑',
+          latitude: 35.671700,
+          longitude: 139.765000,
+        ),
+        _ItineraryItem(
+          time: '14:00',
+          title: '도쿄 황궁',
+          description: '도심 속 역사 명소와 정원 산책',
+          category: '문화',
+          latitude: 35.685200,
+          longitude: 139.752800,
+        ),
+        _ItineraryItem(
+          time: '16:30',
+          title: '도쿄 돔 시티',
+          description: '쇼핑과 엔터테인먼트를 즐기는 일정',
+          category: '액티비티',
+          latitude: 35.705600,
+          longitude: 139.751900,
+        ),
+        _ItineraryItem(
+          time: '19:00',
+          title: '신주쿠',
+          description: '도심 야경과 저녁 식사',
+          category: '야경',
+          latitude: 35.693800,
+          longitude: 139.703400,
+        ),
+      ],
+    ),
+    _ItineraryDay(
+      dayNumber: 4,
+      dateLabel: '2026.07.05(일)',
+      items: [
+        _ItineraryItem(
+          time: '09:30',
+          title: '도요스 시장',
+          description: '시장 구경과 아침 식사',
+          category: '식사',
+          latitude: 35.645400,
+          longitude: 139.781900,
+        ),
+        _ItineraryItem(
+          time: '11:30',
+          title: '팀랩 플래닛',
+          description: '몰입형 디지털 아트 체험',
+          category: '액티비티',
+          latitude: 35.649100,
+          longitude: 139.789800,
+        ),
+        _ItineraryItem(
+          time: '14:30',
+          title: '오다이바 해변공원',
+          description: '도쿄만 풍경을 감상하며 산책',
+          category: '힐링',
+          latitude: 35.629700,
+          longitude: 139.775600,
+        ),
+        _ItineraryItem(
+          time: '17:00',
+          title: '하네다 공항',
+          description: '귀국을 위한 공항 이동',
+          category: '교통',
+          latitude: 35.549400,
+          longitude: 139.779800,
+        ),
+      ],
+    ),
+  ];
+
+  _ItineraryDay get currentDay => days[selectedDayIndex];
+
+  // PageView는 높이가 필요하므로 가장 일정이 많은 날짜 기준으로 확보
+  double get _schedulePageHeight {
+    final maxItemCount = days.fold<int>(
+      0,
+          (maxCount, day) => math.max(
+        maxCount,
+        day.items.length,
+      ),
+    );
+
+    return math.max(
+      380.0,
+      (maxItemCount * 150.0) + 20,
+    );
+  }
+
+  Set<Marker> get _currentMarkers {
+    final day = currentDay;
+
+    return {
+      for (int index = 0; index < day.items.length; index++)
+        if (day.items[index].hasLocation)
+          Marker(
+            markerId: MarkerId(
+              'day_${day.dayNumber}_$index',
+            ),
+            position: day.items[index].position!,
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+              BitmapDescriptor.hueAzure,
+            ),
+            infoWindow: InfoWindow(
+              title: day.items[index].title,
+              snippet:
+              '${day.items[index].time} · ${day.items[index].category}',
+            ),
+          ),
+    };
+  }
+
+  LatLng get _initialMapTarget {
+    for (final item in currentDay.items) {
+      if (item.hasLocation) {
+        return item.position!;
+      }
+    }
+
+    return const LatLng(
+      35.681236,
+      139.767125,
+    );
+  }
 
   @override
   void initState() {
     super.initState();
 
     isSaved = widget.summary != null;
+
+    _pageController = PageController();
   }
 
-  final List<_ItineraryItem> items = [
-    _ItineraryItem(
-      time: '09:00',
-      title: '도쿄역',
-      description: '여행 시작 지점',
-      category: '교통',
-    ),
-    _ItineraryItem(
-      time: '10:00',
-      title: '아사쿠사 센소지',
-      description: '도쿄 대표 전통 사찰 관광',
-      category: '관광',
-    ),
-    _ItineraryItem(
-      time: '12:30',
-      title: '우에노 맛집 거리',
-      description: '현지 음식 중심 점심 식사',
-      category: '식사',
-    ),
-    _ItineraryItem(
-      time: '14:00',
-      title: '우에노 공원',
-      description: '산책과 휴식 중심 일정',
-      category: '힐링',
-    ),
-    _ItineraryItem(
-      time: '16:00',
-      title: '아키하바라',
-      description: '쇼핑 및 서브컬처 거리 탐방',
-      category: '쇼핑',
-    ),
-  ];
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
-  // TODO: 추후 백엔드에서 전달받은 추천 교통패스 값으로 교체
-  final String recommendedPass =
-      'JR 도쿄 와이드 패스';
+  // =========================================================
+  // 지도 카메라
+  // =========================================================
+
+  Future<void> _updateMapCamera() async {
+    final controller = _mapController;
+
+    if (controller == null) return;
+
+    final positions = currentDay.items
+        .where(
+          (item) => item.hasLocation,
+    )
+        .map(
+          (item) => item.position!,
+    )
+        .toList();
+
+    if (positions.isEmpty) return;
+
+    // PageView 변경 직후 Google Map 레이아웃이 갱신될 시간을 확보
+    await Future<void>.delayed(
+      const Duration(
+        milliseconds: 180,
+      ),
+    );
+
+    if (!mounted || _mapController != controller) {
+      return;
+    }
+
+    try {
+      if (positions.length == 1) {
+        await controller.animateCamera(
+          CameraUpdate.newLatLngZoom(
+            positions.first,
+            14.5,
+          ),
+        );
+
+        return;
+      }
+
+      double minLatitude =
+          positions.first.latitude;
+      double maxLatitude =
+          positions.first.latitude;
+      double minLongitude =
+          positions.first.longitude;
+      double maxLongitude =
+          positions.first.longitude;
+
+      for (final position in positions.skip(1)) {
+        minLatitude = math.min(
+          minLatitude,
+          position.latitude,
+        );
+        maxLatitude = math.max(
+          maxLatitude,
+          position.latitude,
+        );
+        minLongitude = math.min(
+          minLongitude,
+          position.longitude,
+        );
+        maxLongitude = math.max(
+          maxLongitude,
+          position.longitude,
+        );
+      }
+
+      // 모든 좌표가 사실상 같은 위치인 경우
+      if (minLatitude == maxLatitude &&
+          minLongitude == maxLongitude) {
+        await controller.animateCamera(
+          CameraUpdate.newLatLngZoom(
+            positions.first,
+            14.5,
+          ),
+        );
+
+        return;
+      }
+
+      final bounds = LatLngBounds(
+        southwest: LatLng(
+          minLatitude,
+          minLongitude,
+        ),
+        northeast: LatLng(
+          maxLatitude,
+          maxLongitude,
+        ),
+      );
+
+      await controller.animateCamera(
+        CameraUpdate.newLatLngBounds(
+          bounds,
+          54,
+        ),
+      );
+    } catch (_) {
+      // 지도 생성 직후 카메라 이동 실패 시 화면 동작에는 영향 없음
+    }
+  }
+
+  void _handleDayChanged(int index) {
+    if (selectedDayIndex == index) return;
+
+    setState(() {
+      selectedDayIndex = index;
+    });
+
+    _updateMapCamera();
+  }
+
+  // =========================================================
+  // 뒤로가기 / 저장
+  // =========================================================
 
   Future<bool> _handleBack() async {
     if (isSaved) {
@@ -142,6 +481,7 @@ class _ItineraryResultPageState
           ),
         ),
       );
+
       return;
     }
 
@@ -158,7 +498,14 @@ class _ItineraryResultPageState
     );
   }
 
+  // =========================================================
+  // 일정 삭제
+  //
+  // 삭제된 시간대는 그대로 유지하며 지도 마커에서는 제외합니다.
+  // =========================================================
+
   Future<void> _deleteItem(
+      _ItineraryDay day,
       _ItineraryItem item,
       ) async {
     final result = await showAppConfirmDialog(
@@ -173,29 +520,39 @@ class _ItineraryResultPageState
     if (!result) return;
 
     setState(() {
-      items.remove(item);
+      final index = day.items.indexOf(item);
 
-      items.add(
-        _ItineraryItem(
+      if (index != -1) {
+        day.items[index] = _ItineraryItem(
           time: item.time,
           title: '비어 있는 시간',
           description:
           '삭제된 일정입니다. 필요하면 새 장소를 추천받아 수정할 수 있습니다.',
           category: '공백',
           isEmpty: true,
-        ),
-      );
+        );
+      }
 
-      items.sort(
-            (a, b) =>
-            a.time.compareTo(b.time),
+      day.items.sort(
+            (a, b) => a.time.compareTo(
+          b.time,
+        ),
       );
 
       isSaved = false;
     });
+
+    if (day == currentDay) {
+      _updateMapCamera();
+    }
   }
 
+  // =========================================================
+  // AI 대체 장소 추천
+  // =========================================================
+
   void _showEditRecommendations(
+      _ItineraryDay day,
       _ItineraryItem item,
       ) {
     final recommendations = [
@@ -204,18 +561,24 @@ class _ItineraryResultPageState
         description:
         '쇼핑과 카페를 함께 즐길 수 있는 지역',
         category: '쇼핑',
+        latitude: 35.671700,
+        longitude: 139.765000,
       ),
       _Recommendation(
         title: '스미다 공원',
         description:
         '가볍게 산책하기 좋은 강변 공원',
         category: '힐링',
+        latitude: 35.712000,
+        longitude: 139.803300,
       ),
       _Recommendation(
         title: '도쿄 국립박물관',
         description:
         '일본 문화와 역사를 볼 수 있는 박물관',
         category: '문화',
+        latitude: 35.718800,
+        longitude: 139.776500,
       ),
     ];
 
@@ -225,16 +588,14 @@ class _ItineraryResultPageState
       showDragHandle: true,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius:
-        BorderRadius.vertical(
+        borderRadius: BorderRadius.vertical(
           top: Radius.circular(26),
         ),
       ),
       builder: (context) {
         return SafeArea(
           child: Padding(
-            padding:
-            const EdgeInsets.fromLTRB(
+            padding: const EdgeInsets.fromLTRB(
               20,
               8,
               20,
@@ -276,15 +637,14 @@ class _ItineraryResultPageState
                       onTap: () {
                         setState(() {
                           final index =
-                          items.indexOf(
+                          day.items.indexOf(
                             item,
                           );
 
                           if (index != -1) {
-                            items[index] =
+                            day.items[index] =
                                 _ItineraryItem(
-                                  time:
-                                  item.time,
+                                  time: item.time,
                                   title:
                                   recommendation
                                       .title,
@@ -294,6 +654,12 @@ class _ItineraryResultPageState
                                   category:
                                   recommendation
                                       .category,
+                                  latitude:
+                                  recommendation
+                                      .latitude,
+                                  longitude:
+                                  recommendation
+                                      .longitude,
                                 );
                           }
 
@@ -303,6 +669,11 @@ class _ItineraryResultPageState
                         Navigator.pop(
                           context,
                         );
+
+                        if (day ==
+                            currentDay) {
+                          _updateMapCamera();
+                        }
                       },
                     );
                   },
@@ -316,6 +687,7 @@ class _ItineraryResultPageState
   }
 
   void _showItemMenu(
+      _ItineraryDay day,
       _ItineraryItem item,
       ) {
     showModalBottomSheet(
@@ -323,16 +695,14 @@ class _ItineraryResultPageState
       backgroundColor: Colors.white,
       showDragHandle: true,
       shape: const RoundedRectangleBorder(
-        borderRadius:
-        BorderRadius.vertical(
+        borderRadius: BorderRadius.vertical(
           top: Radius.circular(26),
         ),
       ),
       builder: (context) {
         return SafeArea(
           child: Padding(
-            padding:
-            const EdgeInsets.fromLTRB(
+            padding: const EdgeInsets.fromLTRB(
               18,
               8,
               18,
@@ -349,20 +719,25 @@ class _ItineraryResultPageState
                   'AI 대체 장소 추천',
                   onTap: () {
                     Navigator.pop(context);
+
                     _showEditRecommendations(
+                      day,
                       item,
                     );
                   },
                 ),
 
                 _BottomSheetAction(
-                  icon:
-                  Icons.delete_rounded,
+                  icon: Icons.delete_rounded,
                   label: '삭제',
                   color: AppColors.error,
                   onTap: () {
                     Navigator.pop(context);
-                    _deleteItem(item);
+
+                    _deleteItem(
+                      day,
+                      item,
+                    );
                   },
                 ),
               ],
@@ -373,8 +748,7 @@ class _ItineraryResultPageState
     );
   }
 
-  Future<void>
-  _regenerateSchedule() async {
+  Future<void> _regenerateSchedule() async {
     setState(() {
       isSaved = false;
     });
@@ -388,6 +762,10 @@ class _ItineraryResultPageState
     );
   }
 
+  // =========================================================
+  // 추천 교통패스
+  // =========================================================
+
   void _showRecommendedPass() {
     showDialog<void>(
       context: context,
@@ -399,8 +777,7 @@ class _ItineraryResultPageState
             BorderRadius.circular(24),
           ),
           child: Padding(
-            padding:
-            const EdgeInsets.all(22),
+            padding: const EdgeInsets.all(22),
             child: Column(
               mainAxisSize:
               MainAxisSize.min,
@@ -412,16 +789,13 @@ class _ItineraryResultPageState
                     Container(
                       width: 42,
                       height: 42,
-                      decoration:
-                      BoxDecoration(
-                        color: AppColors
-                            .primary
+                      decoration: BoxDecoration(
+                        color: AppColors.primary
                             .withOpacity(
                           0.1,
                         ),
                         borderRadius:
-                        BorderRadius
-                            .circular(
+                        BorderRadius.circular(
                           14,
                         ),
                       ),
@@ -433,9 +807,7 @@ class _ItineraryResultPageState
                       ),
                     ),
 
-                    const SizedBox(
-                      width: 12,
-                    ),
+                    const SizedBox(width: 12),
 
                     Expanded(
                       child: Text(
@@ -455,28 +827,22 @@ class _ItineraryResultPageState
                   ],
                 ),
 
-                const SizedBox(
-                  height: 22,
-                ),
+                const SizedBox(height: 22),
 
                 Container(
                   width: double.infinity,
                   padding:
-                  const EdgeInsets
-                      .symmetric(
+                  const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 18,
                   ),
-                  decoration:
-                  BoxDecoration(
-                    color: AppColors
-                        .primary
+                  decoration: BoxDecoration(
+                    color: AppColors.primary
                         .withOpacity(
                       0.08,
                     ),
                     borderRadius:
-                    BorderRadius
-                        .circular(
+                    BorderRadius.circular(
                       16,
                     ),
                   ),
@@ -484,8 +850,7 @@ class _ItineraryResultPageState
                     recommendedPass,
                     textAlign:
                     TextAlign.center,
-                    style:
-                    const TextStyle(
+                    style: const TextStyle(
                       color:
                       AppColors.primary,
                       fontSize: 17,
@@ -495,9 +860,7 @@ class _ItineraryResultPageState
                   ),
                 ),
 
-                const SizedBox(
-                  height: 22,
-                ),
+                const SizedBox(height: 22),
 
                 SizedBox(
                   width: double.infinity,
@@ -511,8 +874,7 @@ class _ItineraryResultPageState
                       '확인',
                       style: TextStyle(
                         fontWeight:
-                        FontWeight
-                            .w800,
+                        FontWeight.w800,
                       ),
                     ),
                   ),
@@ -524,6 +886,10 @@ class _ItineraryResultPageState
       },
     );
   }
+
+  // =========================================================
+  // PDF
+  // =========================================================
 
   String _buildPdfFileName(
       String title,
@@ -537,12 +903,148 @@ class _ItineraryResultPageState
     )
         .trim();
 
-    final fileTitle =
-    safeTitle.isEmpty
+    final fileTitle = safeTitle.isEmpty
         ? 'AI_여행_일정'
         : safeTitle;
 
     return '${fileTitle}_일정.pdf';
+  }
+
+  pw.Widget _buildPdfItem(
+      _ItineraryItem item,
+      ) {
+    final isEmpty = item.isEmpty;
+
+    return pw.Container(
+      width: double.infinity,
+      margin: const pw.EdgeInsets.only(
+        bottom: 10,
+      ),
+      padding: const pw.EdgeInsets.all(
+        14,
+      ),
+      decoration: pw.BoxDecoration(
+        color: isEmpty
+            ? PdfColors.grey100
+            : PdfColors.white,
+        borderRadius:
+        pw.BorderRadius.circular(
+          9,
+        ),
+        border: pw.Border.all(
+          color: isEmpty
+              ? PdfColors.grey300
+              : PdfColors.grey200,
+        ),
+      ),
+      child: pw.Row(
+        crossAxisAlignment:
+        pw.CrossAxisAlignment.start,
+        children: [
+          pw.SizedBox(
+            width: 58,
+            child: pw.Text(
+              item.time,
+              style: pw.TextStyle(
+                fontSize: 12,
+                fontWeight:
+                pw.FontWeight.bold,
+                color: isEmpty
+                    ? PdfColors.grey600
+                    : PdfColors.blue700,
+              ),
+            ),
+          ),
+
+          pw.Expanded(
+            child: pw.Column(
+              crossAxisAlignment:
+              pw.CrossAxisAlignment.start,
+              children: [
+                pw.Container(
+                  padding:
+                  const pw.EdgeInsets
+                      .symmetric(
+                    horizontal: 7,
+                    vertical: 3,
+                  ),
+                  decoration:
+                  pw.BoxDecoration(
+                    color: isEmpty
+                        ? PdfColors.grey200
+                        : PdfColors.blue50,
+                    borderRadius:
+                    pw.BorderRadius
+                        .circular(
+                      20,
+                    ),
+                  ),
+                  child: pw.Text(
+                    item.category,
+                    style: pw.TextStyle(
+                      fontSize: 9,
+                      fontWeight:
+                      pw.FontWeight.bold,
+                      color: isEmpty
+                          ? PdfColors.grey600
+                          : PdfColors.blue700,
+                    ),
+                  ),
+                ),
+
+                pw.SizedBox(height: 7),
+
+                pw.Text(
+                  item.title,
+                  style: pw.TextStyle(
+                    fontSize: 13,
+                    fontWeight:
+                    pw.FontWeight.bold,
+                    color: isEmpty
+                        ? PdfColors.grey600
+                        : PdfColors.grey900,
+                  ),
+                ),
+
+                pw.SizedBox(height: 4),
+
+                pw.Text(
+                  item.description,
+                  style: pw.TextStyle(
+                    fontSize: 10,
+                    color:
+                    PdfColors.grey700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<pw.Widget> _buildPdfDay(
+      _ItineraryDay day,
+      ) {
+    return [
+      pw.SizedBox(height: 26),
+
+      pw.Text(
+        '${day.dayNumber}일차 일정 · ${day.dateLabel}',
+        style: pw.TextStyle(
+          fontSize: 19,
+          fontWeight:
+          pw.FontWeight.bold,
+        ),
+      ),
+
+      pw.SizedBox(height: 14),
+
+      ...day.items.map(
+        _buildPdfItem,
+      ),
+    ];
   }
 
   Future<Uint8List>
@@ -552,7 +1054,6 @@ class _ItineraryResultPageState
             ItinerarySummary
                 .defaultGenerated();
 
-    // PDF에서 한글을 표시하기 위한 Noto Sans KR
     final regularFont =
     await PdfGoogleFonts
         .notoSansKRRegular();
@@ -565,18 +1066,15 @@ class _ItineraryResultPageState
 
     document.addPage(
       pw.MultiPage(
-        pageFormat:
-        PdfPageFormat.a4,
+        pageFormat: PdfPageFormat.a4,
         margin:
-        const pw.EdgeInsets
-            .fromLTRB(
+        const pw.EdgeInsets.fromLTRB(
           36,
           40,
           36,
           40,
         ),
-        theme:
-        pw.ThemeData.withFont(
+        theme: pw.ThemeData.withFont(
           base: regularFont,
           bold: boldFont,
         ),
@@ -608,34 +1106,36 @@ class _ItineraryResultPageState
 
             pw.SizedBox(height: 22),
 
+            // 화면에서는 여행 정보 파란 박스를 제거하지만
+            // PDF에는 기존 여행 정보 내용을 유지합니다.
             pw.Container(
               width: double.infinity,
               padding:
-              const pw.EdgeInsets
-                  .all(16),
+              const pw.EdgeInsets.all(
+                16,
+              ),
               decoration:
               pw.BoxDecoration(
                 color:
                 PdfColors.blue50,
                 borderRadius:
                 pw.BorderRadius
-                    .circular(10),
-                border:
-                pw.Border.all(
+                    .circular(
+                  10,
+                ),
+                border: pw.Border.all(
                   color:
                   PdfColors.blue100,
                 ),
               ),
               child: pw.Column(
                 crossAxisAlignment:
-                pw
-                    .CrossAxisAlignment
+                pw.CrossAxisAlignment
                     .start,
                 children: [
                   pw.Text(
                     '여행 정보',
-                    style:
-                    pw.TextStyle(
+                    style: pw.TextStyle(
                       fontSize: 16,
                       fontWeight:
                       pw.FontWeight
@@ -645,50 +1145,42 @@ class _ItineraryResultPageState
                     ),
                   ),
 
-                  pw.SizedBox(
-                    height: 12,
-                  ),
+                  pw.SizedBox(height: 12),
 
                   pw.Text(
                     '지역  ${displaySummary.region}',
-                    style: const pw
-                        .TextStyle(
+                    style:
+                    const pw.TextStyle(
                       fontSize: 11,
                     ),
                   ),
 
-                  pw.SizedBox(
-                    height: 6,
-                  ),
+                  pw.SizedBox(height: 6),
 
                   pw.Text(
                     '기간  ${displaySummary.period}',
-                    style: const pw
-                        .TextStyle(
+                    style:
+                    const pw.TextStyle(
                       fontSize: 11,
                     ),
                   ),
 
-                  pw.SizedBox(
-                    height: 6,
-                  ),
+                  pw.SizedBox(height: 6),
 
                   pw.Text(
                     '일정  ${displaySummary.duration}',
-                    style: const pw
-                        .TextStyle(
+                    style:
+                    const pw.TextStyle(
                       fontSize: 11,
                     ),
                   ),
 
-                  pw.SizedBox(
-                    height: 6,
-                  ),
+                  pw.SizedBox(height: 6),
 
                   pw.Text(
                     '테마  ${displaySummary.theme}',
-                    style: const pw
-                        .TextStyle(
+                    style:
+                    const pw.TextStyle(
                       fontSize: 11,
                     ),
                   ),
@@ -701,26 +1193,27 @@ class _ItineraryResultPageState
             pw.Container(
               width: double.infinity,
               padding:
-              const pw.EdgeInsets
-                  .all(16),
+              const pw.EdgeInsets.all(
+                16,
+              ),
               decoration:
               pw.BoxDecoration(
                 color:
                 PdfColors.grey100,
                 borderRadius:
                 pw.BorderRadius
-                    .circular(10),
+                    .circular(
+                  10,
+                ),
               ),
               child: pw.Column(
                 crossAxisAlignment:
-                pw
-                    .CrossAxisAlignment
+                pw.CrossAxisAlignment
                     .start,
                 children: [
                   pw.Text(
                     '추천 교통패스',
-                    style:
-                    pw.TextStyle(
+                    style: pw.TextStyle(
                       fontSize: 14,
                       fontWeight:
                       pw.FontWeight
@@ -728,200 +1221,26 @@ class _ItineraryResultPageState
                     ),
                   ),
 
-                  pw.SizedBox(
-                    height: 8,
-                  ),
+                  pw.SizedBox(height: 8),
 
                   pw.Text(
                     recommendedPass,
-                    style:
-                    pw.TextStyle(
+                    style: pw.TextStyle(
                       fontSize: 13,
                       fontWeight:
                       pw.FontWeight
                           .bold,
                       color:
-                      PdfColors
-                          .blue700,
+                      PdfColors.blue700,
                     ),
                   ),
                 ],
               ),
             ),
 
-            pw.SizedBox(height: 26),
-
-            pw.Text(
-              '1일차 일정',
-              style: pw.TextStyle(
-                fontSize: 19,
-                fontWeight:
-                pw.FontWeight.bold,
-              ),
-            ),
-
-            pw.SizedBox(height: 14),
-
-            ...items.map(
-                  (item) {
-                final isEmpty =
-                    item.isEmpty;
-
-                return pw.Container(
-                  width:
-                  double.infinity,
-                  margin:
-                  const pw
-                      .EdgeInsets
-                      .only(
-                    bottom: 10,
-                  ),
-                  padding:
-                  const pw
-                      .EdgeInsets
-                      .all(14),
-                  decoration:
-                  pw.BoxDecoration(
-                    color: isEmpty
-                        ? PdfColors
-                        .grey100
-                        : PdfColors
-                        .white,
-                    borderRadius:
-                    pw.BorderRadius
-                        .circular(
-                      9,
-                    ),
-                    border:
-                    pw.Border.all(
-                      color: isEmpty
-                          ? PdfColors
-                          .grey300
-                          : PdfColors
-                          .grey200,
-                    ),
-                  ),
-                  child: pw.Row(
-                    crossAxisAlignment:
-                    pw
-                        .CrossAxisAlignment
-                        .start,
-                    children: [
-                      pw.SizedBox(
-                        width: 58,
-                        child: pw.Text(
-                          item.time,
-                          style:
-                          pw.TextStyle(
-                            fontSize:
-                            12,
-                            fontWeight:
-                            pw
-                                .FontWeight
-                                .bold,
-                            color: isEmpty
-                                ? PdfColors
-                                .grey600
-                                : PdfColors
-                                .blue700,
-                          ),
-                        ),
-                      ),
-
-                      pw.Expanded(
-                        child:
-                        pw.Column(
-                          crossAxisAlignment:
-                          pw
-                              .CrossAxisAlignment
-                              .start,
-                          children: [
-                            pw.Container(
-                              padding:
-                              const pw
-                                  .EdgeInsets
-                                  .symmetric(
-                                horizontal:
-                                7,
-                                vertical:
-                                3,
-                              ),
-                              decoration:
-                              pw.BoxDecoration(
-                                color: isEmpty
-                                    ? PdfColors
-                                    .grey200
-                                    : PdfColors
-                                    .blue50,
-                                borderRadius:
-                                pw.BorderRadius
-                                    .circular(
-                                  20,
-                                ),
-                              ),
-                              child:
-                              pw.Text(
-                                item.category,
-                                style:
-                                pw.TextStyle(
-                                  fontSize:
-                                  9,
-                                  fontWeight:
-                                  pw.FontWeight
-                                      .bold,
-                                  color: isEmpty
-                                      ? PdfColors
-                                      .grey600
-                                      : PdfColors
-                                      .blue700,
-                                ),
-                              ),
-                            ),
-
-                            pw.SizedBox(
-                              height: 7,
-                            ),
-
-                            pw.Text(
-                              item.title,
-                              style:
-                              pw.TextStyle(
-                                fontSize:
-                                13,
-                                fontWeight:
-                                pw.FontWeight
-                                    .bold,
-                                color: isEmpty
-                                    ? PdfColors
-                                    .grey600
-                                    : PdfColors
-                                    .grey900,
-                              ),
-                            ),
-
-                            pw.SizedBox(
-                              height: 4,
-                            ),
-
-                            pw.Text(
-                              item
-                                  .description,
-                              style:
-                              pw.TextStyle(
-                                fontSize:
-                                10,
-                                color:
-                                PdfColors
-                                    .grey700,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
+            // 모든 날짜 일정 출력
+            ...days.expand(
+              _buildPdfDay,
             ),
 
             pw.SizedBox(height: 18),
@@ -935,12 +1254,11 @@ class _ItineraryResultPageState
 
             pw.Align(
               alignment:
-              pw.Alignment
-                  .centerRight,
+              pw.Alignment.centerRight,
               child: pw.Text(
                 'AI Travel Planner',
-                style: const pw
-                    .TextStyle(
+                style:
+                const pw.TextStyle(
                   fontSize: 9,
                   color:
                   PdfColors.grey500,
@@ -963,8 +1281,7 @@ class _ItineraryResultPageState
 
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor:
-      Colors.white,
+      backgroundColor: Colors.white,
       showDragHandle: true,
       shape:
       const RoundedRectangleBorder(
@@ -977,8 +1294,7 @@ class _ItineraryResultPageState
         return SafeArea(
           child: Padding(
             padding:
-            const EdgeInsets
-                .fromLTRB(
+            const EdgeInsets.fromLTRB(
               20,
               6,
               20,
@@ -999,14 +1315,11 @@ class _ItineraryResultPageState
                       .titleLarge
                       ?.copyWith(
                     fontWeight:
-                    FontWeight
-                        .w900,
+                    FontWeight.w900,
                   ),
                 ),
 
-                const SizedBox(
-                  height: 6,
-                ),
+                const SizedBox(height: 6),
 
                 Text(
                   '완성된 일정을 기기에 저장하거나 다른 앱으로 공유할 수 있습니다.',
@@ -1022,13 +1335,11 @@ class _ItineraryResultPageState
                   ),
                 ),
 
-                const SizedBox(
-                  height: 16,
-                ),
+                const SizedBox(height: 16),
 
                 _PdfActionTile(
-                  icon: Icons
-                      .download_rounded,
+                  icon:
+                  Icons.download_rounded,
                   title: '기기에 저장',
                   description:
                   'PDF 파일을 Download/AI Travel Planner 폴더에 저장합니다.',
@@ -1041,13 +1352,10 @@ class _ItineraryResultPageState
                   },
                 ),
 
-                const SizedBox(
-                  height: 8,
-                ),
+                const SizedBox(height: 8),
 
                 _PdfActionTile(
-                  icon:
-                  Icons.share_rounded,
+                  icon: Icons.share_rounded,
                   title: '공유',
                   description:
                   '메신저, 메일 등 다른 앱으로 PDF 파일을 공유합니다.',
@@ -1067,8 +1375,7 @@ class _ItineraryResultPageState
     );
   }
 
-  Future<void>
-  _saveSchedulePdf() async {
+  Future<void> _saveSchedulePdf() async {
     if (!isSaved ||
         _isProcessingPdf) {
       return;
@@ -1126,7 +1433,7 @@ class _ItineraryResultPageState
           ),
         );
       }
-    } catch (e) {
+    } catch (_) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(
@@ -1147,8 +1454,7 @@ class _ItineraryResultPageState
     }
   }
 
-  Future<void>
-  _shareSchedulePdf() async {
+  Future<void> _shareSchedulePdf() async {
     if (!isSaved ||
         _isProcessingPdf) {
       return;
@@ -1178,7 +1484,7 @@ class _ItineraryResultPageState
         subject:
         '${displaySummary.title} 여행 일정',
       );
-    } catch (e) {
+    } catch (_) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(
@@ -1199,10 +1505,12 @@ class _ItineraryResultPageState
     }
   }
 
+  // =========================================================
+  // 화면
+  // =========================================================
+
   @override
-  Widget build(
-      BuildContext context,
-      ) {
+  Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: _handleBack,
       child: Scaffold(
@@ -1211,10 +1519,15 @@ class _ItineraryResultPageState
         body: SafeArea(
           child: Column(
             children: [
+              // =================================================
+              // 상단
+              //
+              // 기존 PDF / 저장 여부 UI 유지
+              // =================================================
+
               Padding(
                 padding:
-                const EdgeInsets
-                    .fromLTRB(
+                const EdgeInsets.fromLTRB(
                   18,
                   16,
                   18,
@@ -1225,26 +1538,21 @@ class _ItineraryResultPageState
                     Material(
                       color: Colors.white,
                       borderRadius:
-                      BorderRadius
-                          .circular(
+                      BorderRadius.circular(
                         14,
                       ),
                       child: InkWell(
-                        onTap:
-                        _handleBack,
+                        onTap: _handleBack,
                         borderRadius:
-                        BorderRadius
-                            .circular(
+                        BorderRadius.circular(
                           14,
                         ),
                         child: Container(
                           width: 44,
                           height: 44,
                           alignment:
-                          Alignment
-                              .center,
-                          child:
-                          const Icon(
+                          Alignment.center,
+                          child: const Icon(
                             Icons
                                 .arrow_back_ios_new_rounded,
                             size: 20,
@@ -1255,9 +1563,7 @@ class _ItineraryResultPageState
                       ),
                     ),
 
-                    const SizedBox(
-                      width: 12,
-                    ),
+                    const SizedBox(width: 12),
 
                     Expanded(
                       child: Text(
@@ -1275,18 +1581,14 @@ class _ItineraryResultPageState
                       ),
                     ),
 
-                    // PDF 저장 / 공유 버튼
-                    // 저장 전에도 표시하지만 비활성화 상태
                     Tooltip(
                       message: isSaved
                           ? 'PDF 저장 및 공유'
                           : '일정을 저장하면 사용할 수 있습니다.',
                       child: Material(
-                        color:
-                        Colors.white,
+                        color: Colors.white,
                         borderRadius:
-                        BorderRadius
-                            .circular(
+                        BorderRadius.circular(
                           14,
                         ),
                         child: InkWell(
@@ -1295,8 +1597,7 @@ class _ItineraryResultPageState
                               ? _showPdfActions
                               : null,
                           borderRadius:
-                          BorderRadius
-                              .circular(
+                          BorderRadius.circular(
                             14,
                           ),
                           child: SizedBox(
@@ -1319,12 +1620,16 @@ class _ItineraryResultPageState
                                 ),
                               )
                                   : Icon(
-                                Icons.download_rounded,
+                                Icons
+                                    .download_rounded,
                                 size:
                                 22,
                                 color: isSaved
-                                    ? AppColors.primary
-                                    : AppColors.textSecondary.withOpacity(
+                                    ? AppColors
+                                    .primary
+                                    : AppColors
+                                    .textSecondary
+                                    .withOpacity(
                                   0.35,
                                 ),
                               ),
@@ -1334,9 +1639,7 @@ class _ItineraryResultPageState
                       ),
                     ),
 
-                    const SizedBox(
-                      width: 8,
-                    ),
+                    const SizedBox(width: 8),
 
                     Container(
                       padding:
@@ -1348,19 +1651,16 @@ class _ItineraryResultPageState
                       decoration:
                       BoxDecoration(
                         color: isSaved
-                            ? AppColors
-                            .success
+                            ? AppColors.success
                             .withOpacity(
                           0.1,
                         )
-                            : AppColors
-                            .warning
+                            : AppColors.warning
                             .withOpacity(
                           0.18,
                         ),
                         borderRadius:
-                        BorderRadius
-                            .circular(
+                        BorderRadius.circular(
                           999,
                         ),
                       ),
@@ -1370,15 +1670,13 @@ class _ItineraryResultPageState
                             : '저장 전',
                         style: TextStyle(
                           color: isSaved
-                              ? AppColors
-                              .success
+                              ? AppColors.success
                               : const Color(
                             0xFF9A6B00,
                           ),
                           fontSize: 12,
                           fontWeight:
-                          FontWeight
-                              .w900,
+                          FontWeight.w900,
                         ),
                       ),
                     ),
@@ -1402,30 +1700,78 @@ class _ItineraryResultPageState
                     CrossAxisAlignment
                         .start,
                     children: [
-                      _TripSummaryCard(
-                        summary:
-                        widget.summary,
+                      // =================================================
+                      // 기존 파란 여행 정보 박스 대신 지도
+                      // =================================================
+
+                      _ItineraryMapCard(
+                        initialTarget:
+                        _initialMapTarget,
+                        markers:
+                        _currentMarkers,
+                        onMapCreated:
+                            (controller) {
+                          _mapController =
+                              controller;
+
+                          _updateMapCamera();
+                        },
                       ),
 
                       const SizedBox(
-                        height: 22,
+                        height: 16,
                       ),
 
+                      // =================================================
+                      // 현재 날짜 + 추천 패스
+                      // =================================================
+
                       Row(
+                        crossAxisAlignment:
+                        CrossAxisAlignment
+                            .center,
                         children: [
                           Expanded(
-                            child: Text(
-                              '1일차 일정',
-                              style: Theme.of(
-                                context,
-                              )
-                                  .textTheme
-                                  .titleLarge
-                                  ?.copyWith(
-                                fontWeight:
-                                FontWeight
-                                    .w900,
-                              ),
+                            child: Column(
+                              crossAxisAlignment:
+                              CrossAxisAlignment
+                                  .start,
+                              children: [
+                                Text(
+                                  '${currentDay.dayNumber}일차 일정',
+                                  style: Theme.of(
+                                    context,
+                                  )
+                                      .textTheme
+                                      .titleLarge
+                                      ?.copyWith(
+                                    fontWeight:
+                                    FontWeight
+                                        .w900,
+                                  ),
+                                ),
+
+                                const SizedBox(
+                                  height: 4,
+                                ),
+
+                                Text(
+                                  currentDay
+                                      .dateLabel,
+                                  style: Theme.of(
+                                    context,
+                                  )
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                    color: AppColors
+                                        .textSecondary,
+                                    fontWeight:
+                                    FontWeight
+                                        .w700,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
 
@@ -1433,17 +1779,14 @@ class _ItineraryResultPageState
                               .icon(
                             onPressed:
                             _showRecommendedPass,
-                            icon:
-                            const Icon(
+                            icon: const Icon(
                               Icons
                                   .confirmation_number_outlined,
                               size: 18,
                             ),
-                            label:
-                            const Text(
+                            label: const Text(
                               '추천 패스',
-                              style:
-                              TextStyle(
+                              style: TextStyle(
                                 fontWeight:
                                 FontWeight
                                     .w800,
@@ -1485,26 +1828,132 @@ class _ItineraryResultPageState
                         height: 12,
                       ),
 
-                      ...items.map(
-                            (item) =>
-                            _TimelineItem(
-                              item: item,
-                              onMoreTap: () {
-                                _showItemMenu(
-                                  item,
-                                );
-                              },
+                      // =================================================
+                      // 날짜 페이지 위치 표시
+                      // =================================================
+
+                      Row(
+                        mainAxisAlignment:
+                        MainAxisAlignment
+                            .center,
+                        children: [
+                          for (int index = 0;
+                          index <
+                              days.length;
+                          index++)
+                            AnimatedContainer(
+                              duration:
+                              const Duration(
+                                milliseconds:
+                                180,
+                              ),
+                              margin:
+                              const EdgeInsets
+                                  .symmetric(
+                                horizontal: 4,
+                              ),
+                              width: index ==
+                                  selectedDayIndex
+                                  ? 20
+                                  : 7,
+                              height: 7,
+                              decoration:
+                              BoxDecoration(
+                                color: index ==
+                                    selectedDayIndex
+                                    ? AppColors
+                                    .primary
+                                    : AppColors
+                                    .border,
+                                borderRadius:
+                                BorderRadius
+                                    .circular(
+                                  999,
+                                ),
+                              ),
                             ),
+                        ],
+                      ),
+
+                      const SizedBox(
+                        height: 8,
+                      ),
+
+                      Center(
+                        child: Text(
+                          '좌우로 넘겨 날짜별 일정을 확인하세요.',
+                          style: Theme.of(
+                            context,
+                          )
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(
+                            color: AppColors
+                                .textSecondary,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(
+                        height: 14,
+                      ),
+
+                      // =================================================
+                      // 날짜별 일정 PageView
+                      //
+                      // 오른쪽 / 왼쪽 스와이프로 날짜 변경
+                      // =================================================
+
+                      SizedBox(
+                        height:
+                        _schedulePageHeight,
+                        child:
+                        PageView.builder(
+                          controller:
+                          _pageController,
+                          itemCount:
+                          days.length,
+                          physics:
+                          const PageScrollPhysics(),
+                          onPageChanged:
+                          _handleDayChanged,
+                          itemBuilder:
+                              (context, index) {
+                            final day =
+                            days[index];
+
+                            return Column(
+                              children: [
+                                ...day.items.map(
+                                      (item) =>
+                                      _TimelineItem(
+                                        item: item,
+                                        onMoreTap:
+                                            () {
+                                          _showItemMenu(
+                                            day,
+                                            item,
+                                          );
+                                        },
+                                      ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
 
+              // =================================================
+              // 하단 저장 / 재추천 영역 유지
+              // =================================================
+
               Container(
                 padding:
-                const EdgeInsets
-                    .fromLTRB(
+                const EdgeInsets.fromLTRB(
                   22,
                   14,
                   22,
@@ -1537,24 +1986,20 @@ class _ItineraryResultPageState
                     ),
 
                     SizedBox(
-                      width:
-                      double.infinity,
+                      width: double.infinity,
                       height: 52,
                       child:
                       OutlinedButton
                           .icon(
                         onPressed:
                         _regenerateSchedule,
-                        icon:
-                        const Icon(
+                        icon: const Icon(
                           Icons
                               .refresh_rounded,
                         ),
-                        label:
-                        const Text(
+                        label: const Text(
                           '다시 AI 추천받기',
-                          style:
-                          TextStyle(
+                          style: TextStyle(
                             fontWeight:
                             FontWeight
                                 .w800,
@@ -1594,80 +2039,78 @@ class _ItineraryResultPageState
   }
 }
 
-class _TripSummaryCard
-    extends StatelessWidget {
-  final ItinerarySummary? summary;
+// ===========================================================
+// 지도 카드
+// ===========================================================
 
-  const _TripSummaryCard({
-    required this.summary,
+class _ItineraryMapCard extends StatelessWidget {
+  final LatLng initialTarget;
+  final Set<Marker> markers;
+  final ValueChanged<GoogleMapController> onMapCreated;
+
+  const _ItineraryMapCard({
+    required this.initialTarget,
+    required this.markers,
+    required this.onMapCreated,
   });
 
   @override
-  Widget build(
-      BuildContext context,
-      ) {
-    final displaySummary =
-        summary ??
-            ItinerarySummary
-                .defaultGenerated();
-
+  Widget build(BuildContext context) {
     return Container(
+      height: 280,
       width: double.infinity,
-      padding:
-      const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient:
-        const LinearGradient(
-          colors: [
-            AppColors.primary,
-            AppColors.primaryDark,
-          ],
-          begin:
-          Alignment.topLeft,
-          end:
-          Alignment.bottomRight,
-        ),
+        color: Colors.white,
         borderRadius:
         BorderRadius.circular(24),
-      ),
-      child: Column(
-        crossAxisAlignment:
-        CrossAxisAlignment.start,
-        children: [
-          Text(
-            displaySummary.title,
-            style:
-            const TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              fontWeight:
-              FontWeight.w900,
+        border: Border.all(
+          color: AppColors.border,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black
+                .withOpacity(
+              0.05,
             ),
-          ),
-
-          const SizedBox(
-            height: 8,
-          ),
-
-          Text(
-            '${displaySummary.period} · '
-                '${displaySummary.duration} · '
-                '${displaySummary.theme}',
-            style:
-            const TextStyle(
-              color: Colors.white70,
-              fontSize: 14,
-              height: 1.4,
+            blurRadius: 18,
+            offset:
+            const Offset(
+              0,
+              8,
             ),
           ),
         ],
+      ),
+      child: ClipRRect(
+        borderRadius:
+        BorderRadius.circular(24),
+        child: GoogleMap(
+          initialCameraPosition:
+          CameraPosition(
+            target: initialTarget,
+            zoom: 12.5,
+          ),
+          markers: markers,
+          onMapCreated:
+          onMapCreated,
+          myLocationButtonEnabled:
+          false,
+          zoomControlsEnabled:
+          false,
+          mapToolbarEnabled:
+          false,
+          compassEnabled: true,
+        ),
       ),
     );
   }
 }
 
-class _TimelineItem
-    extends StatelessWidget {
+// ===========================================================
+// 일정 타임라인
+// ===========================================================
+
+class _TimelineItem extends StatelessWidget {
   final _ItineraryItem item;
   final VoidCallback onMoreTap;
 
@@ -1677,9 +2120,7 @@ class _TimelineItem
   });
 
   @override
-  Widget build(
-      BuildContext context,
-      ) {
+  Widget build(BuildContext context) {
     final color = item.isEmpty
         ? AppColors.textSecondary
         : AppColors.primary;
@@ -1706,65 +2147,55 @@ class _TimelineItem
             Container(
               width: 16,
               height: 16,
-              decoration:
-              BoxDecoration(
+              decoration: BoxDecoration(
                 color: color,
-                shape:
-                BoxShape.circle,
+                shape: BoxShape.circle,
               ),
             ),
-
             Container(
               width: 2,
               height: 94,
-              color:
-              AppColors.border,
+              color: AppColors.border,
             ),
           ],
         ),
 
-        const SizedBox(
-          width: 14,
-        ),
+        const SizedBox(width: 14),
 
         Expanded(
           child: Container(
             margin:
-            const EdgeInsets
-                .only(
+            const EdgeInsets.only(
               bottom: 16,
             ),
             padding:
-            const EdgeInsets
-                .all(16),
+            const EdgeInsets.all(
+              16,
+            ),
             decoration:
             BoxDecoration(
               color: item.isEmpty
-                  ? AppColors
-                  .background
+                  ? AppColors.background
                   : Colors.white,
               borderRadius:
-              BorderRadius
-                  .circular(20),
+              BorderRadius.circular(
+                20,
+              ),
               border: item.isEmpty
                   ? Border.all(
                 color:
-                AppColors
-                    .border,
+                AppColors.border,
               )
                   : null,
-              boxShadow:
-              item.isEmpty
+              boxShadow: item.isEmpty
                   ? null
                   : [
                 BoxShadow(
-                  color: Colors
-                      .black
+                  color: Colors.black
                       .withOpacity(
                     0.04,
                   ),
-                  blurRadius:
-                  18,
+                  blurRadius: 18,
                   offset:
                   const Offset(
                     0,
@@ -1787,10 +2218,8 @@ class _TimelineItem
                             padding:
                             const EdgeInsets
                                 .symmetric(
-                              horizontal:
-                              8,
-                              vertical:
-                              5,
+                              horizontal: 8,
+                              vertical: 5,
                             ),
                             decoration:
                             BoxDecoration(
@@ -1806,8 +2235,7 @@ class _TimelineItem
                             ),
                             child: Text(
                               item.category,
-                              style:
-                              TextStyle(
+                              style: TextStyle(
                                 color:
                                 color,
                                 fontSize:
@@ -1827,8 +2255,7 @@ class _TimelineItem
 
                       Text(
                         item.title,
-                        style:
-                        Theme.of(
+                        style: Theme.of(
                           context,
                         )
                             .textTheme
@@ -1846,8 +2273,7 @@ class _TimelineItem
 
                       Text(
                         item.description,
-                        style:
-                        Theme.of(
+                        style: Theme.of(
                           context,
                         )
                             .textTheme
@@ -1862,8 +2288,7 @@ class _TimelineItem
                 ),
 
                 IconButton(
-                  onPressed:
-                  onMoreTap,
+                  onPressed: onMoreTap,
                   icon: const Icon(
                     Icons
                         .more_vert_rounded,
@@ -1880,10 +2305,12 @@ class _TimelineItem
   }
 }
 
-class _RecommendationCard
-    extends StatelessWidget {
-  final _Recommendation
-  recommendation;
+// ===========================================================
+// 대체 장소 추천 카드
+// ===========================================================
+
+class _RecommendationCard extends StatelessWidget {
+  final _Recommendation recommendation;
   final VoidCallback onTap;
 
   const _RecommendationCard({
@@ -1892,17 +2319,13 @@ class _RecommendationCard
   });
 
   @override
-  Widget build(
-      BuildContext context,
-      ) {
+  Widget build(BuildContext context) {
     return Container(
-      margin:
-      const EdgeInsets.only(
+      margin: const EdgeInsets.only(
         bottom: 12,
       ),
       child: Material(
-        color:
-        AppColors.background,
+        color: AppColors.background,
         borderRadius:
         BorderRadius.circular(
           18,
@@ -1915,8 +2338,9 @@ class _RecommendationCard
           ),
           child: Padding(
             padding:
-            const EdgeInsets
-                .all(16),
+            const EdgeInsets.all(
+              16,
+            ),
             child: Row(
               children: [
                 Container(
@@ -1935,13 +2359,10 @@ class _RecommendationCard
                       16,
                     ),
                   ),
-                  child:
-                  const Icon(
-                    Icons
-                        .place_rounded,
+                  child: const Icon(
+                    Icons.place_rounded,
                     color:
-                    AppColors
-                        .primary,
+                    AppColors.primary,
                   ),
                 ),
 
@@ -1958,8 +2379,7 @@ class _RecommendationCard
                       Text(
                         recommendation
                             .title,
-                        style:
-                        Theme.of(
+                        style: Theme.of(
                           context,
                         )
                             .textTheme
@@ -1978,8 +2398,7 @@ class _RecommendationCard
                       Text(
                         '${recommendation.category} · '
                             '${recommendation.description}',
-                        style:
-                        Theme.of(
+                        style: Theme.of(
                           context,
                         )
                             .textTheme
@@ -2008,8 +2427,11 @@ class _RecommendationCard
   }
 }
 
-class _PdfActionTile
-    extends StatelessWidget {
+// ===========================================================
+// PDF 액션
+// ===========================================================
+
+class _PdfActionTile extends StatelessWidget {
   final IconData icon;
   final String title;
   final String description;
@@ -2023,12 +2445,9 @@ class _PdfActionTile
   });
 
   @override
-  Widget build(
-      BuildContext context,
-      ) {
+  Widget build(BuildContext context) {
     return Material(
-      color:
-      AppColors.background,
+      color: AppColors.background,
       borderRadius:
       BorderRadius.circular(
         18,
@@ -2051,8 +2470,7 @@ class _PdfActionTile
                 height: 46,
                 decoration:
                 BoxDecoration(
-                  color: AppColors
-                      .primary
+                  color: AppColors.primary
                       .withOpacity(
                     0.1,
                   ),
@@ -2082,8 +2500,7 @@ class _PdfActionTile
                   children: [
                     Text(
                       title,
-                      style:
-                      Theme.of(
+                      style: Theme.of(
                         context,
                       )
                           .textTheme
@@ -2101,8 +2518,7 @@ class _PdfActionTile
 
                     Text(
                       description,
-                      style:
-                      Theme.of(
+                      style: Theme.of(
                         context,
                       )
                           .textTheme
@@ -2136,8 +2552,11 @@ class _PdfActionTile
   }
 }
 
-class _BottomSheetAction
-    extends StatelessWidget {
+// ===========================================================
+// 하단 메뉴 액션
+// ===========================================================
+
+class _BottomSheetAction extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color? color;
@@ -2151,13 +2570,10 @@ class _BottomSheetAction
   });
 
   @override
-  Widget build(
-      BuildContext context,
-      ) {
+  Widget build(BuildContext context) {
     final itemColor =
         color ??
-            AppColors
-                .textPrimary;
+            AppColors.textPrimary;
 
     return Material(
       color: Colors.transparent,
@@ -2173,8 +2589,7 @@ class _BottomSheetAction
         ),
         child: Padding(
           padding:
-          const EdgeInsets
-              .symmetric(
+          const EdgeInsets.symmetric(
             horizontal: 12,
             vertical: 16,
           ),
@@ -2195,8 +2610,7 @@ class _BottomSheetAction
                   color: itemColor,
                   fontSize: 16,
                   fontWeight:
-                  FontWeight
-                      .w800,
+                  FontWeight.w800,
                 ),
               ),
             ],
@@ -2206,6 +2620,10 @@ class _BottomSheetAction
     );
   }
 }
+
+// ===========================================================
+// 일정 요약 데이터
+// ===========================================================
 
 class ItinerarySummary {
   final String title;
@@ -2226,8 +2644,7 @@ class ItinerarySummary {
     required this.isCompleted,
   });
 
-  factory ItinerarySummary
-      .defaultGenerated() {
+  factory ItinerarySummary.defaultGenerated() {
     return const ItinerarySummary(
       title: '도쿄 여행',
       region: '도쿄',
@@ -2250,35 +2667,52 @@ class ItinerarySummary {
 
     return ItinerarySummary(
       title:
-      extra['title']
-          ?.toString() ??
+      extra['title']?.toString() ??
           '도쿄 여행',
       region:
-      extra['region']
-          ?.toString() ??
+      extra['region']?.toString() ??
           '도쿄',
       period:
-      extra['period']
-          ?.toString() ??
+      extra['period']?.toString() ??
           '2026-07-02(목)',
       duration:
       extra['duration']
           ?.toString() ??
           '3박 4일',
       theme:
-      extra['theme']
-          ?.toString() ??
+      extra['theme']?.toString() ??
           '식도락 / 쇼핑 / 힐링',
       status:
-      extra['status']
-          ?.toString() ??
+      extra['status']?.toString() ??
           '저장 전',
       isCompleted:
-      extra['isCompleted'] ==
-          true,
+      extra['isCompleted'] == true,
     );
   }
 }
+
+// ===========================================================
+// 날짜별 일정
+// ===========================================================
+
+class _ItineraryDay {
+  final int dayNumber;
+  final String dateLabel;
+  final List<_ItineraryItem> items;
+
+  _ItineraryDay({
+    required this.dayNumber,
+    required this.dateLabel,
+    required this.items,
+  });
+}
+
+// ===========================================================
+// 개별 일정
+//
+// 지도 표시가 필요한 장소는 latitude / longitude를 가집니다.
+// 삭제된 공백 일정은 좌표가 없으므로 지도에 표시되지 않습니다.
+// ===========================================================
 
 class _ItineraryItem {
   final String time;
@@ -2287,23 +2721,54 @@ class _ItineraryItem {
   final String category;
   final bool isEmpty;
 
+  final double? latitude;
+  final double? longitude;
+
   _ItineraryItem({
     required this.time,
     required this.title,
     required this.description,
     required this.category,
     this.isEmpty = false,
+    this.latitude,
+    this.longitude,
   });
+
+  bool get hasLocation {
+    return !isEmpty &&
+        latitude != null &&
+        longitude != null;
+  }
+
+  LatLng? get position {
+    if (!hasLocation) {
+      return null;
+    }
+
+    return LatLng(
+      latitude!,
+      longitude!,
+    );
+  }
 }
+
+// ===========================================================
+// 대체 추천 장소
+// ===========================================================
 
 class _Recommendation {
   final String title;
   final String description;
   final String category;
 
+  final double latitude;
+  final double longitude;
+
   _Recommendation({
     required this.title,
     required this.description,
     required this.category,
+    required this.latitude,
+    required this.longitude,
   });
 }
